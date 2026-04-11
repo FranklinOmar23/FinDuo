@@ -2,8 +2,10 @@ services:
   - type: web
     name: finduo-web
     runtime: static
-    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @finduo/web build
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter @finduo/web build
     staticPublishPath: ./apps/web/dist
     envVars:
+      - key: NODE_ENV
+        value: production
       - key: VITE_API_URL
         value: https://finduo.onrender.com/api
