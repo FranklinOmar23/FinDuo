@@ -1,0 +1,183 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --finduo-bg:
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.08), transparent 25%),
+    radial-gradient(circle at top left, rgba(249, 115, 96, 0.12), transparent 22%),
+    linear-gradient(180deg, #faf6ef 0%, #f6f2e9 100%);
+  --finduo-text: #16353a;
+  --finduo-card-bg: #ffffff;
+  --finduo-card-border: #d8d3c7;
+  --finduo-nav-bg: rgba(255, 255, 255, 0.96);
+  --finduo-input-bg: #ffffff;
+  --finduo-title: #17373c;
+  --finduo-muted: #8a9896;
+  --finduo-shadow: 0 4px 14px rgba(20, 48, 53, 0.08);
+  --finduo-soft-surface: #f3f4f3;
+  color: #16353a;
+  background: var(--finduo-bg);
+  font-family: "Trebuchet MS", sans-serif;
+}
+
+body.finduo-dark {
+  --finduo-bg:
+    radial-gradient(circle at top right, rgba(68, 211, 191, 0.12), transparent 24%),
+    radial-gradient(circle at top left, rgba(242, 138, 104, 0.1), transparent 18%),
+    linear-gradient(180deg, #0f1719 0%, #121d20 100%);
+  --finduo-text: #edf6f4;
+  --finduo-card-bg: #172124;
+  --finduo-card-border: #27383d;
+  --finduo-nav-bg: rgba(20, 29, 32, 0.96);
+  --finduo-input-bg: #11181b;
+  --finduo-title: #f1f7f6;
+  --finduo-muted: #94a9a6;
+  --finduo-shadow: 0 12px 26px rgba(0, 0, 0, 0.28);
+  --finduo-soft-surface: #1f2b2f;
+}
+
+html {
+  min-height: 100%;
+  background: var(--finduo-bg);
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  background: var(--finduo-bg);
+  color: var(--finduo-text);
+  transition: background 180ms ease, color 180ms ease;
+}
+
+#root {
+  min-height: 100vh;
+  background: transparent;
+}
+
+@layer components {
+  .panel {
+    @apply rounded-[24px] border shadow-[0_6px_18px_rgba(22,53,58,0.08)];
+    background: var(--finduo-card-bg);
+    border-color: var(--finduo-card-border);
+  }
+
+  .page-shell {
+    @apply mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-28 pt-4;
+    color: var(--finduo-text);
+  }
+
+  .phone-card {
+    @apply rounded-[22px] border;
+    background: var(--finduo-card-bg);
+    border-color: var(--finduo-card-border);
+    box-shadow: var(--finduo-shadow);
+  }
+
+  .phone-title {
+    @apply text-[28px] font-bold leading-none;
+    color: var(--finduo-title);
+  }
+
+  .phone-subtitle {
+    @apply text-sm;
+    color: var(--finduo-muted);
+  }
+
+  .metric-chip {
+    @apply inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-xs font-medium text-white/90;
+  }
+
+  .theme-heading {
+    color: var(--finduo-title);
+  }
+
+  .theme-muted {
+    color: var(--finduo-muted);
+  }
+
+  .theme-input {
+    background: var(--finduo-input-bg);
+    border-color: var(--finduo-card-border);
+    color: var(--finduo-text);
+  }
+
+  .theme-outline-button {
+    background: var(--finduo-card-bg);
+    border-color: var(--finduo-card-border);
+    color: var(--finduo-text);
+  }
+
+  .theme-soft-button {
+    background: var(--finduo-soft-surface);
+    color: var(--finduo-muted);
+  }
+
+  .theme-elevated-surface {
+    background: color-mix(in srgb, var(--finduo-card-bg) 92%, white 8%);
+    border: 1px solid color-mix(in srgb, var(--finduo-card-border) 85%, transparent 15%);
+  }
+}
+
+.bottom-nav {
+  background: var(--finduo-nav-bg);
+  border-color: var(--finduo-card-border);
+}
+
+body.finduo-dark .bottom-nav {
+  background: var(--finduo-nav-bg);
+  border-color: var(--finduo-card-border);
+}
+
+input,
+select,
+textarea {
+  background: var(--finduo-input-bg);
+  border-color: var(--finduo-card-border);
+  color: var(--finduo-text);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--finduo-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--finduo-input-bg) inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--finduo-muted);
+}
+
+body.finduo-dark .phone-card p,
+body.finduo-dark .phone-card h1,
+body.finduo-dark .phone-card h2,
+body.finduo-dark .phone-card h3,
+body.finduo-dark .phone-card h4,
+body.finduo-dark .phone-card span,
+body.finduo-dark .phone-card label,
+body.finduo-dark .panel p,
+body.finduo-dark .panel h1,
+body.finduo-dark .panel h2,
+body.finduo-dark .panel h3,
+body.finduo-dark .panel h4,
+body.finduo-dark .panel span,
+body.finduo-dark .panel label {
+  color: var(--finduo-text);
+}
+
+body.finduo-dark .text-\[\#8a9896\],
+body.finduo-dark .text-\[\#8aa0a2\],
+body.finduo-dark .text-\[\#82a3a5\],
+body.finduo-dark .text-\[\#567176\],
+body.finduo-dark .text-\[\#7f908f\],
+body.finduo-dark .text-\[\#8da09f\],
+body.finduo-dark .text-\[\#869592\],
+body.finduo-dark .text-\[\#7f918e\],
+body.finduo-dark .text-\[\#9ca7a6\] {
+  color: var(--finduo-muted) !important;
+}

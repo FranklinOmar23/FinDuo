@@ -1,0 +1,12 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Validar monorepo FinDúo",
+			"type": "shell",
+			"command": "corepack pnpm --dir apps/web exec tsc -p tsconfig.json --noEmit; corepack pnpm --dir apps/api exec tsc -p tsconfig.json --noEmit; corepack pnpm --dir packages/types exec tsc -p tsconfig.json --noEmit",
+			"isBackground": false,
+			"group": "build"
+		}
+	]
+}

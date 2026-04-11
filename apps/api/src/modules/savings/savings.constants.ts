@@ -1,0 +1,1 @@
+export const INTERNAL_SAVINGS_EXPENSE_PREFIX = "__savings_transfer__";
