@@ -6,6 +6,7 @@ import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { Input } from "../../../components/ui/Input";
 import { useToastStore } from "../../../store/toastStore";
+import { extractAuthErrorMessage } from "../lib/extractAuthErrorMessage";
 import { useAuth } from "../hooks/useAuth";
 
 export const RegisterForm = () => {
@@ -30,11 +31,7 @@ export const RegisterForm = () => {
       });
       navigate("/");
     } catch (error) {
-      let message = "No se pudo crear la cuenta.";
-
-      if (axios.isAxiosError<{ message?: string }>(error)) {
-        message = error.response?.data?.message ?? message;
-      }
+      const message = extractAuthErrorMessage(error, "No se pudo crear la cuenta.");
 
       setErrorMessage(message);
       pushToast({

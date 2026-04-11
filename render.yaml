@@ -4,6 +4,10 @@ services:
     runtime: static
     buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm --filter @finduo/web build
     staticPublishPath: ./apps/web/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
     envVars:
       - key: NODE_ENV
         value: production
