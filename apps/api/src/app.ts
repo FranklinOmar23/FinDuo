@@ -12,10 +12,23 @@ import savingsRouter from "./modules/savings/savings.router.js";
 import { sendSuccess } from "./shared/utils/response.js";
 
 export const app: Express = express();
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "https://finduo-front.onrender.com",
+  env.CLIENT_URL,
+  ...env.CLIENT_URLS
+]);
 
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`Origen no permitido por CORS: ${origin}`));
+    },
     credentials: true
   })
 );

@@ -4,6 +4,11 @@ import { config } from "dotenv";
 import { z } from "zod";
 
 const envPath = resolve(process.cwd(), ".env");
+const clientUrlsSchema = z
+  .string()
+  .optional()
+  .transform((value) => value?.split(",").map((item) => item.trim()).filter(Boolean) ?? [])
+  .pipe(z.array(z.string().url()));
 
 if (existsSync(envPath)) {
   config({ path: envPath });
@@ -15,6 +20,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().default(4000),
   CLIENT_URL: z.string().url(),
+  CLIENT_URLS: clientUrlsSchema,
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),

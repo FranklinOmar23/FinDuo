@@ -1,16 +1,20 @@
 import { useState } from "react";
 import axios from "axios";
+import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { Input } from "../../../components/ui/Input";
+import { useToastStore } from "../../../store/toastStore";
 import { useAuth } from "../hooks/useAuth";
 
 export const RegisterForm = () => {
   const navigate = useNavigate();
   const { registerMutation } = useAuth();
   const [form, setForm] = useState({ fullName: "", email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const pushToast = useToastStore((state) => state.pushToast);
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -18,14 +22,26 @@ export const RegisterForm = () => {
 
     try {
       await registerMutation.mutateAsync(form);
+      pushToast({
+        tone: "success",
+        title: "Cuenta creada",
+        message: "La cuenta ya quedó lista para empezar a usar FinDúo.",
+        durationMs: 3200
+      });
       navigate("/");
     } catch (error) {
+      let message = "No se pudo crear la cuenta.";
+
       if (axios.isAxiosError<{ message?: string }>(error)) {
-        setErrorMessage(error.response?.data?.message ?? "No se pudo crear la cuenta.");
-        return;
+        message = error.response?.data?.message ?? message;
       }
 
-      setErrorMessage("No se pudo crear la cuenta.");
+      setErrorMessage(message);
+      pushToast({
+        tone: "error",
+        title: "No se pudo crear la cuenta",
+        message
+      });
     }
   };
 
@@ -45,9 +61,19 @@ export const RegisterForm = () => {
         />
         <Input
           label="Contraseña"
-          type="password"
+          type={showPassword ? "text" : "password"}
           value={form.password}
           onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+          endAdornment={
+            <button
+              className="theme-soft-button inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-transparent text-[#54706f] transition hover:border-white/60 hover:text-teal"
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          }
         />
         {errorMessage ? <p className="text-sm font-medium text-[#d14f3f]">{errorMessage}</p> : null}
         <Button className="w-full" type="submit" disabled={registerMutation.isPending}>

@@ -27,6 +27,7 @@ Monorepo fullstack para una PWA de finanzas para parejas.
 
 - `PORT`
 - `CLIENT_URL`
+- `CLIENT_URLS` (opcional, separado por comas para múltiples orígenes)
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
