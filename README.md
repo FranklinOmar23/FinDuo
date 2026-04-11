@@ -34,7 +34,7 @@ Monorepo fullstack para una PWA de finanzas para parejas.
 
 ### Web
 
-- `VITE_API_URL`
+- `VITE_API_URL` (ejemplo desplegado: `https://finduo.onrender.com/api`)
 - `VITE_SUPABASE_URL`
 - `VITE_SUPABASE_ANON_KEY`
 - `VITE_PUSH_PUBLIC_KEY`
