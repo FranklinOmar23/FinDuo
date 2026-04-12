@@ -40,40 +40,107 @@ export const DashboardPage = () => {
   if (!activeCouple) {
     return (
       <section className="space-y-4">
-        <header className="pt-2">
-          <h1 className="phone-title">FinDúo</h1>
-          <p className="phone-subtitle">Todavía no tienen un espacio conjunto</p>
+        <header className="flex items-start justify-between pt-2">
+          <div>
+            <p className="text-sm text-[#869592] first-letter:uppercase">{monthLabel}</p>
+            <h1 className="phone-title">FinDúo</h1>
+          </div>
+          <Link className="theme-outline-button inline-flex h-9 w-9 items-center justify-center rounded-full border transition hover:border-teal hover:text-teal" to="/profile">
+            <Settings2 className="h-4 w-4" strokeWidth={1.9} />
+          </Link>
         </header>
 
-        {!soloModeAccepted ? (
-          <article className="phone-card space-y-4 p-5">
-            <p className="theme-heading text-xl font-semibold">Ahora mismo estás usando FinDúo solo.</p>
-            <p className="theme-muted text-sm">Puedes seguir entrando y explorar la app por tu cuenta, o crear una pareja cuando quieran empezar a compartir gastos, aportes y metas.</p>
-            <div className="grid gap-3">
-              <button
-                className="theme-outline-button inline-flex items-center justify-center rounded-[14px] border px-4 py-3 text-sm font-semibold"
-                type="button"
-                onClick={() => {
-                  acceptSoloMode();
-                  setSoloModeAccepted(true);
-                }}
-              >
-                Continuar sin pareja
-              </button>
-              <Link className="inline-flex items-center justify-center rounded-[14px] bg-teal px-4 py-3 text-sm font-semibold text-white" to="/onboarding">
-                Crear o unirme a una pareja
-              </Link>
-            </div>
-          </article>
-        ) : (
-          <article className="phone-card space-y-4 p-5">
-            <p className="theme-heading text-xl font-semibold">Modo solo activado.</p>
-            <p className="theme-muted text-sm">Puedes seguir navegando la app por tu cuenta. Cuando quieras compartir todo con otra persona, la opción de crear o unirte a una pareja seguirá disponible.</p>
+        <article className="relative overflow-hidden rounded-[22px] bg-teal p-5 text-white">
+          <div className="absolute -right-6 top-3 h-20 w-20 rounded-full bg-white/10" />
+          <div className="absolute -bottom-6 right-4 h-28 w-28 rounded-full bg-white/8" />
+          <p className="text-sm font-semibold text-white/85">Disponible este mes</p>
+          <p className="mt-2 text-5xl font-bold leading-none">{formatMoney(0)}</p>
+          <div className="mt-5 flex items-center justify-between text-xs text-white/80">
+            <span>Presupuesto usado</span>
+            <span>0%</span>
+          </div>
+          <div className="mt-2 h-2 rounded-full bg-white/20">
+            <div className="h-2 rounded-full bg-white" style={{ width: "0%" }} />
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <span className="metric-chip"><Wallet className="h-3.5 w-3.5" /> {formatMoney(0)}</span>
+            <span className="metric-chip"><TrendingDown className="h-3.5 w-3.5" /> {formatMoney(0)}</span>
+            <span className="metric-chip"><Crosshair className="h-3.5 w-3.5" /> {formatMoney(0)}</span>
+          </div>
+        </article>
+
+        <article className="phone-card space-y-4 p-5">
+          <p className="theme-heading text-xl font-semibold">{soloModeAccepted ? "Ahora mismo estás usando FinDúo solo." : "Antes de compartir, puedes empezar solo."}</p>
+          <p className="theme-muted text-sm">Tienes acceso al inicio y a tu perfil. Cuando quieran compartir gastos, aportes y metas, crea una pareja o únete con un código de invitación.</p>
+          <div className="grid gap-3">
+            <button
+              className={`inline-flex items-center justify-center rounded-[14px] px-4 py-3 text-sm font-semibold ${soloModeAccepted ? "theme-soft-button border border-transparent text-[#4d6969]" : "theme-outline-button border"}`}
+              type="button"
+              onClick={() => {
+                acceptSoloMode();
+                setSoloModeAccepted(true);
+              }}
+            >
+              {soloModeAccepted ? "Estás en modo solo" : "Continuar sin pareja"}
+            </button>
             <Link className="inline-flex items-center justify-center rounded-[14px] bg-teal px-4 py-3 text-sm font-semibold text-white" to="/onboarding">
               Crear o unirme a una pareja
             </Link>
+          </div>
+        </article>
+
+        <article className="phone-card p-4">
+          <div className="flex items-center justify-between">
+            <p className="theme-muted text-[11px] uppercase tracking-[0.18em]">Aportes del mes</p>
+            <p className="theme-muted text-xs">Modo solo</p>
+          </div>
+          <div className="mt-4 text-center">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-[#9bcfd2] bg-[#e5f3f5] text-[#1f6f73]">
+              {(user?.fullName ?? "T").slice(0, 1).toUpperCase()}
+            </div>
+            <p className="theme-heading mt-3 text-2xl font-bold">{formatMoney(0)}</p>
+            <p className="theme-muted text-sm">Tú</p>
+          </div>
+        </article>
+
+        <div>
+          <div className="mb-2 flex items-center justify-between px-1">
+            <h2 className="theme-heading text-base font-semibold">Metas de ahorro</h2>
+            <Link className="text-xs font-semibold text-teal" to="/savings">Ver todas</Link>
+          </div>
+          <article className="phone-card p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#fff4e6] text-[#ef7d4d]"><Crosshair className="h-5 w-5" strokeWidth={2} /></div>
+              <div className="flex-1">
+                <p className="theme-heading font-semibold">Aún no tienes metas activas</p>
+                <p className="theme-muted mt-2 text-sm">Cuando quieras, podrás crear metas de ahorro compartidas desde esta misma app.</p>
+              </div>
+            </div>
           </article>
-        )}
+        </div>
+
+        <article className="phone-card p-4">
+          <h2 className="theme-heading text-base font-semibold">Gastos por categoría</h2>
+          <div className="mt-4 flex items-center gap-5">
+            <div className="flex shrink-0 flex-col items-center">
+              <div className="relative h-28 w-28">
+                <svg className="h-28 w-28 -rotate-90" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="42" fill="none" stroke="rgba(148, 169, 166, 0.18)" strokeWidth="20" />
+                </svg>
+                <div className="absolute inset-[22px] flex items-center justify-center rounded-full" style={{ background: "var(--finduo-card-bg)" }}>
+                  <div className="text-center">
+                    <p className="theme-heading text-xl font-bold leading-none">{formatMoney(0)}</p>
+                  </div>
+                </div>
+              </div>
+              <p className="theme-muted mt-2 text-[10px] uppercase tracking-[0.14em]">0 categorías</p>
+            </div>
+            <div className="flex-1 space-y-1 text-sm">
+              <p className="theme-heading font-semibold">Sin gastos registrados</p>
+              <p className="theme-muted text-sm">Cuando te vincules con una pareja podrás ver aquí la distribución por categoría.</p>
+            </div>
+          </div>
+        </article>
       </section>
     );
   }
