@@ -1,24 +1,7 @@
 import { RefreshCw, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { registerSW } from "virtual:pwa-register";
-
-const updateSummaryRows = [
-  {
-    area: "Modo solo",
-    change: "Correcciones para aportes, gastos y metas personales",
-    impact: "Alta"
-  },
-  {
-    area: "PWA",
-    change: "Aviso visible cuando hay una nueva versión disponible",
-    impact: "Media"
-  },
-  {
-    area: "UX",
-    change: "Mejoras en modales, perfil y formularios en tema oscuro",
-    impact: "Media"
-  }
-];
+import { currentReleaseNotes } from "../releaseNotes";
 
 export const UpdatePwaBanner = () => {
   const [needRefresh, setNeedRefresh] = useState(false);
@@ -49,8 +32,11 @@ export const UpdatePwaBanner = () => {
               <RefreshCw className="h-5 w-5" strokeWidth={2} />
             </div>
             <div>
-              <p className="theme-heading text-sm font-semibold">Nueva actualización disponible</p>
-              <p className="theme-muted mt-1 text-sm">Hay una versión nueva de FinDúo lista para instalar. Actualiza para cargar los cambios más recientes.</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="theme-heading text-sm font-semibold">{currentReleaseNotes.headline}</p>
+                <span className="rounded-full bg-teal/12 px-2.5 py-1 text-[11px] font-semibold text-teal">{currentReleaseNotes.version}</span>
+              </div>
+              <p className="theme-muted mt-1 text-sm">{currentReleaseNotes.summary}</p>
             </div>
           </div>
           <button className="theme-soft-button flex h-8 w-8 items-center justify-center rounded-full" type="button" onClick={() => setDismissed(true)}>
@@ -65,7 +51,7 @@ export const UpdatePwaBanner = () => {
             <span>Impacto</span>
           </div>
           <div>
-            {updateSummaryRows.map((row) => (
+            {currentReleaseNotes.rows.map((row) => (
               <div key={row.area} className="grid grid-cols-[0.9fr_2fr_auto] gap-3 border-b border-teal/10 px-4 py-3 text-sm last:border-b-0">
                 <span className="font-semibold text-[#185154]">{row.area}</span>
                 <span className="text-[#54706f]">{row.change}</span>
