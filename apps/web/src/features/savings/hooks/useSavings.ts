@@ -1,9 +1,11 @@
 import type { ApiResponse, SavingsGoal } from "@finduo/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../lib/api";
+import { useCoupleStore } from "../../../store/coupleStore";
 
 export const useSavings = () => {
   const queryClient = useQueryClient();
+  const activeCouple = useCoupleStore((state) => state.activeCouple);
 
   const invalidateFinanceQueries = async () => {
     await Promise.all([
@@ -17,7 +19,8 @@ export const useSavings = () => {
     queryFn: async () => {
       const response = await api.get<ApiResponse<SavingsGoal[]>>("/savings");
       return response.data.data;
-    }
+    },
+    enabled: Boolean(activeCouple)
   });
 
   const addGoalMutation = useMutation({

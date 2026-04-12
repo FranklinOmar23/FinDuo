@@ -1,9 +1,11 @@
 import type { ApiResponse, Contribution } from "@finduo/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../lib/api";
+import { useCoupleStore } from "../../../store/coupleStore";
 
 export const useContributions = () => {
   const queryClient = useQueryClient();
+  const activeCouple = useCoupleStore((state) => state.activeCouple);
 
   const invalidateFinanceQueries = async () => {
     await Promise.all([
@@ -18,6 +20,7 @@ export const useContributions = () => {
       const response = await api.get<ApiResponse<Contribution[]>>("/contributions");
       return response.data.data;
     },
+    enabled: Boolean(activeCouple),
     refetchInterval: 4000,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: true

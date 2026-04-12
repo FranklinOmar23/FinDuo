@@ -35,6 +35,25 @@ export const DashboardPage = () => {
   const user = useAuthStore((state) => state.user);
   const activeCouple = useCoupleStore((state) => state.activeCouple);
 
+  if (!activeCouple) {
+    return (
+      <section className="space-y-4">
+        <header className="pt-2">
+          <h1 className="phone-title">FinDúo</h1>
+          <p className="phone-subtitle">Todavía no tienen un espacio conjunto</p>
+        </header>
+
+        <article className="phone-card space-y-4 p-5">
+          <p className="theme-heading text-xl font-semibold">Puedes seguir explorando la app sin crear pareja todavía.</p>
+          <p className="theme-muted text-sm">Cuando quieran empezar a compartir gastos, aportes y metas, creen una pareja o únanse con un código de invitación.</p>
+          <Link className="inline-flex items-center justify-center rounded-[14px] bg-teal px-4 py-3 text-sm font-semibold text-white" to="/onboarding">
+            Crear o unirme a una pareja
+          </Link>
+        </article>
+      </section>
+    );
+  }
+
   const summary = data ?? {
     month: new Date().toISOString().slice(0, 7),
     totalIncome: 0,

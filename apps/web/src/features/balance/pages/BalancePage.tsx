@@ -17,6 +17,22 @@ export const BalancePage = () => {
   const contributions = useContributions().contributionsQuery.data ?? [];
   const expenses = useExpenses().expensesQuery.data ?? [];
 
+  if (!activeCouple) {
+    return (
+      <section className="space-y-4">
+        <header className="pt-2">
+          <h1 className="phone-title">Balance</h1>
+          <p className="phone-subtitle">Necesitan una pareja para comparar aportes y gastos</p>
+        </header>
+
+        <article className="phone-card space-y-4 p-5">
+          <p className="theme-heading text-lg font-semibold">Todavía no hay balance compartido.</p>
+          <p className="theme-muted text-sm">Puedes volver luego cuando tengan una pareja creada o unirte desde el código de invitación.</p>
+        </article>
+      </section>
+    );
+  }
+
   const totalByUser = contributions.reduce<Record<string, number>>((accumulator, contribution) => {
     accumulator[contribution.userId] = (accumulator[contribution.userId] ?? 0) + contribution.amount;
     return accumulator;

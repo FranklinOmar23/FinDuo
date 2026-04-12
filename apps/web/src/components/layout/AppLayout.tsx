@@ -80,8 +80,6 @@ export const AppLayout = ({ children }: PropsWithChildren) => {
     }
   }, [activeCouple, location.pathname, user?.id]);
 
-  const requiresCouple = !["/onboarding", "/profile"].includes(location.pathname);
-
   const handleTourClose = () => {
     if (user?.id) {
       markAppTourAsSeen(user.id);
@@ -96,10 +94,6 @@ export const AppLayout = ({ children }: PropsWithChildren) => {
         <div className="phone-card w-full p-6 text-center text-sm text-[#708381]">{autoJoinMutation.isPending ? "Vinculando la invitación con tu cuenta..." : "Cargando tu espacio compartido..."}</div>
       </div>
     );
-  }
-
-  if (!activeCouple && requiresCouple) {
-    return <Navigate to="/onboarding" replace />;
   }
 
   if (activeCouple && location.pathname === "/onboarding") {
