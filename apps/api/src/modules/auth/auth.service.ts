@@ -85,6 +85,14 @@ export class AuthService {
         throw new AppError("Ese correo ya está registrado", 409, createUserError?.message);
       }
 
+      if (message.includes("rate limit") || message.includes("too many") || message.includes("over_email_send_rate_limit")) {
+        throw new AppError(
+          "Supabase bloqueó temporalmente nuevos correos por exceso de intentos. Espera unos minutos e intenta otra vez.",
+          429,
+          createUserError?.message
+        );
+      }
+
       if (createUserError?.status === 401 || message.includes("unauthorized") || message.includes("jwt")) {
         throw new AppError(
           "La SERVICE_ROLE_KEY de Supabase no es válida o no tiene permisos de admin",
