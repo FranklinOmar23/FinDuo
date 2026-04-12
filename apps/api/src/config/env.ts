@@ -22,9 +22,10 @@ const envSchema = z.object({
   CLIENT_URL: z.string().url(),
   CLIENT_URLS: clientUrlsSchema,
   SUPABASE_URL: z.string().url(),
-  SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  SUPABASE_JWT_SECRET: z.string().min(1)
+  SUPABASE_JWT_SECRET: z.string().min(32),
+  AUTH_ACCESS_TOKEN_MINUTES: z.coerce.number().int().positive().default(60),
+  AUTH_REFRESH_TOKEN_DAYS: z.coerce.number().int().positive().default(30)
 });
 
 export const env = envSchema.parse(process.env);

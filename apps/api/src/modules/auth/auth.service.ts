@@ -1,186 +1,146 @@
+import { randomUUID } from "node:crypto";
 import type { AuthPayload, UserProfile } from "@finduo/types";
-import type { User } from "@supabase/supabase-js";
-import { supabase, supabaseAdmin } from "../../config/supabase.js";
+import { env } from "../../config/env.js";
+import { supabaseAdmin } from "../../config/supabase.js";
 import { AppError } from "../../shared/errors/AppError.js";
+import { hashPassword, verifyPassword } from "../../shared/utils/password.js";
+import { createAuthSession, verifyToken } from "../../shared/utils/tokens.js";
 import type { LoginInput, LogoutInput, RefreshInput, RegisterInput } from "./auth.schema.js";
 
-interface ProfileRow {
+interface AppUserRow {
   id: string;
+  email: string;
+  password_hash: string;
   full_name: string | null;
   avatar_url: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export class AuthService {
-  private mapProfile(profile: ProfileRow, email: string): UserProfile {
-    return {
-      id: profile.id,
-      email,
-      fullName: profile.full_name,
-      avatarUrl: profile.avatar_url,
-      coupleId: null,
-      createdAt: profile.created_at,
-      updatedAt: profile.created_at
-    };
-  }
-
-  private mapAuthUser(user: User, email: string): UserProfile {
-    const fullName =
-      typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null;
-    const avatarUrl =
-      typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null;
-
+  private mapUser(user: AppUserRow): UserProfile {
     return {
       id: user.id,
-      email,
-      fullName,
-      avatarUrl,
+      email: user.email,
+      fullName: user.full_name,
+      avatarUrl: user.avatar_url,
       coupleId: null,
       createdAt: user.created_at,
-      updatedAt: user.updated_at ?? user.created_at
+      updatedAt: user.updated_at
     };
   }
 
-  private async fetchProfile(user: User, email: string): Promise<UserProfile> {
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .select("id, full_name, avatar_url, created_at")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (error || !data) {
-      return this.mapAuthUser(user, email);
-    }
-
-    return this.mapProfile(data satisfies ProfileRow, email);
+  private normalizeEmail(email: string) {
+    return email.trim().toLowerCase();
   }
 
-  private async ensureProfile(user: User, fullName: string | null) {
-    await supabaseAdmin.from("profiles").upsert(
-      {
-        id: user.id,
-        full_name: fullName,
-        avatar_url: null
-      },
-      {
-        onConflict: "id"
-      }
-    );
+  private async getUserByEmail(email: string) {
+    const { data, error } = await supabaseAdmin
+      .from("app_users")
+      .select("id, email, password_hash, full_name, avatar_url, created_at, updated_at")
+      .eq("email", this.normalizeEmail(email))
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError("No se pudo consultar el usuario", 500, error.message);
+    }
+
+    return (data as AppUserRow | null) ?? null;
+  }
+
+  private async getUserById(userId: string) {
+    const { data, error } = await supabaseAdmin
+      .from("app_users")
+      .select("id, email, password_hash, full_name, avatar_url, created_at, updated_at")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError("No se pudo consultar el usuario", 500, error.message);
+    }
+
+    return (data as AppUserRow | null) ?? null;
+  }
+
+  private buildAuthPayload(user: AppUserRow): AuthPayload {
+    return {
+      user: this.mapUser(user),
+      session: createAuthSession(
+        {
+          id: user.id,
+          email: user.email
+        },
+        env.SUPABASE_JWT_SECRET,
+        env.AUTH_ACCESS_TOKEN_MINUTES,
+        env.AUTH_REFRESH_TOKEN_DAYS
+      )
+    };
   }
 
   async register(payload: RegisterInput): Promise<AuthPayload> {
-    const { data: createdUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email: payload.email,
-      password: payload.password,
-      email_confirm: true,
-      user_metadata: {
-        full_name: payload.fullName
-      }
-    });
+    const email = this.normalizeEmail(payload.email);
+    const existingUser = await this.getUserByEmail(email);
 
-    if (createUserError || !createdUser.user) {
-      const message = createUserError?.message?.toLowerCase() ?? "";
-
-      if (message.includes("already") || message.includes("registered") || message.includes("exists")) {
-        throw new AppError("Ese correo ya está registrado", 409, createUserError?.message);
-      }
-
-      if (message.includes("rate limit") || message.includes("too many") || message.includes("over_email_send_rate_limit")) {
-        throw new AppError(
-          "Supabase bloqueó temporalmente nuevos correos por exceso de intentos. Espera unos minutos e intenta otra vez.",
-          429,
-          createUserError?.message
-        );
-      }
-
-      if (createUserError?.status === 401 || message.includes("unauthorized") || message.includes("jwt")) {
-        throw new AppError(
-          "La SERVICE_ROLE_KEY de Supabase no es válida o no tiene permisos de admin",
-          500,
-          createUserError?.message
-        );
-      }
-
-      throw new AppError("No se pudo registrar el usuario", 400, createUserError?.message);
+    if (existingUser) {
+      throw new AppError("Ese correo ya está registrado", 409);
     }
 
-    await this.ensureProfile(createdUser.user, payload.fullName);
+    const passwordHash = await hashPassword(payload.password);
+    const now = new Date().toISOString();
 
-    return this.login({
-      email: payload.email,
-      password: payload.password
-    });
+    const { data, error } = await supabaseAdmin
+      .from("app_users")
+      .insert({
+        id: randomUUID(),
+        email,
+        password_hash: passwordHash,
+        full_name: payload.fullName.trim(),
+        avatar_url: null,
+        created_at: now,
+        updated_at: now
+      })
+      .select("id, email, password_hash, full_name, avatar_url, created_at, updated_at")
+      .single();
+
+    if (error || !data) {
+      if (error?.code === "23505") {
+        throw new AppError("Ese correo ya está registrado", 409, error.message);
+      }
+
+      throw new AppError("No se pudo registrar el usuario", 400, error?.message);
+    }
+
+    return this.buildAuthPayload(data as AppUserRow);
   }
 
   async login(payload: LoginInput): Promise<AuthPayload> {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: payload.email,
-      password: payload.password
-    });
+    const user = await this.getUserByEmail(payload.email);
 
-    if (error) {
+    if (!user) {
       throw new AppError("Credenciales inválidas", 401, error.message);
     }
 
-    if (!data.user || !data.session) {
-      throw new AppError("No se pudo iniciar sesión", 401);
-    }
+    const passwordMatches = await verifyPassword(payload.password, user.password_hash);
 
-    await this.ensureProfile(
-      data.user,
-      typeof data.user.user_metadata?.full_name === "string" ? data.user.user_metadata.full_name : null
-    );
-
-    const user = await this.fetchProfile(data.user, data.user.email ?? payload.email);
-
-    return {
-      user,
-      session: {
-        accessToken: data.session.access_token,
-        refreshToken: data.session.refresh_token,
-        expiresAt: data.session.expires_at ?? null
-      }
+    if (!passwordMatches) {
+      throw new AppError("Credenciales inválidas", 401);
     };
+
+    return this.buildAuthPayload(user);
   }
 
   async refreshSession(payload: RefreshInput): Promise<AuthPayload> {
-    const { data, error } = await supabase.auth.refreshSession({
-      refresh_token: payload.refreshToken
-    });
+    const tokenPayload = verifyToken(payload.refreshToken, env.SUPABASE_JWT_SECRET, "refresh");
+    const user = await this.getUserById(tokenPayload.sub);
 
-    if (error) {
-      throw new AppError("No se pudo renovar la sesión", 401, error.message);
-    }
-
-    if (!data.user || !data.session) {
+    if (!user) {
       throw new AppError("La sesión ya no es válida", 401);
-    }
-
-    await this.ensureProfile(
-      data.user,
-      typeof data.user.user_metadata?.full_name === "string" ? data.user.user_metadata.full_name : null
-    );
-
-    const user = await this.fetchProfile(data.user, data.user.email ?? "");
-
-    return {
-      user,
-      session: {
-        accessToken: data.session.access_token,
-        refreshToken: data.session.refresh_token,
-        expiresAt: data.session.expires_at ?? null
-      }
     };
+
+    return this.buildAuthPayload(user);
   }
 
   async logout(payload: LogoutInput) {
-    // TODO: implementar invalidación real de refresh token si se requiere.
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      throw new AppError("No se pudo cerrar sesión", 400, error.message);
-    }
-
     return {
       revoked: true,
       refreshToken: payload.refreshToken ?? null

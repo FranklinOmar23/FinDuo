@@ -5,7 +5,7 @@ Monorepo fullstack para una PWA de finanzas para parejas.
 ## Stack
 
 - Monorepo con pnpm workspaces y Turborepo.
-- API con Express, TypeScript, Zod y Supabase.
+- API con Express, TypeScript, Zod y Supabase como base de datos.
 - Web con React, Vite, TailwindCSS, TanStack Query, Zustand y vite-plugin-pwa.
 - Tipos compartidos en un paquete TypeScript reusable.
 
@@ -19,7 +19,8 @@ Monorepo fullstack para una PWA de finanzas para parejas.
 
 1. Ejecuta `corepack pnpm install` en la raíz.
 2. Copia los archivos `.env.example` de `apps/api` y `apps/web` a sus variantes `.env`.
-3. Completa las credenciales de Supabase y la URL del frontend.
+3. Ejecuta el script [apps/api/supabase/custom-auth.sql](apps/api/supabase/custom-auth.sql) en el SQL Editor de Supabase.
+4. Completa las credenciales de Supabase y la URL del frontend.
 
 ## Variables de entorno
 
@@ -29,15 +30,14 @@ Monorepo fullstack para una PWA de finanzas para parejas.
 - `CLIENT_URL`
 - `CLIENT_URLS` (opcional, separado por comas para múltiples orígenes)
 - `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_JWT_SECRET`
+- `SUPABASE_JWT_SECRET` (se usa como secreto de la auth propia del backend)
+- `AUTH_ACCESS_TOKEN_MINUTES`
+- `AUTH_REFRESH_TOKEN_DAYS`
 
 ### Web
 
 - `VITE_API_URL` (ejemplo desplegado: `https://finduo.onrender.com/api`)
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
 - `VITE_PUSH_PUBLIC_KEY`
 
 ## Scripts raíz
@@ -55,6 +55,6 @@ Monorepo fullstack para una PWA de finanzas para parejas.
 ## Estado actual
 
 - La estructura completa del monorepo está creada.
-- El backend expone los endpoints base con middlewares, validación y respuestas estándar.
+- El backend expone los endpoints base con middlewares, validación, auth propia con JWT y respuestas estándar.
 - El frontend incluye rutas públicas/privadas, layout móvil, stores, hooks y configuración PWA.
 - La lógica real de persistencia sigue marcada con comentarios `TODO` en español donde corresponde.

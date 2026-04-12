@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
-import { supabaseAdmin } from "../config/supabase.js";
+import { env } from "../config/env.js";
 import { AppError } from "../shared/errors/AppError.js";
+import { verifyToken } from "../shared/utils/tokens.js";
 
 export const authMiddleware = async (
   req: Request,
@@ -14,16 +15,21 @@ export const authMiddleware = async (
   }
 
   const token = authorization.replace("Bearer ", "").trim();
-  const { data, error } = await supabaseAdmin.auth.getUser(token);
 
-  if (error || !data.user) {
-    return next(new AppError("Token inválido", 401, error?.message));
+  try {
+    const payload = verifyToken(token, env.SUPABASE_JWT_SECRET, "access");
+
+    req.authUser = {
+      id: payload.sub,
+      email: payload.email
+    };
+
+    next();
+  } catch (error) {
+    if (error instanceof AppError) {
+      return next(error);
+    }
+
+    return next(new AppError("Token inválido", 401));
   }
-
-  req.authUser = {
-    id: data.user.id,
-    email: data.user.email
-  };
-
-  next();
 };

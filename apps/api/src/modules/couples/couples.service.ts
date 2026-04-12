@@ -16,7 +16,7 @@ interface CoupleMemberRow {
   role: string;
 }
 
-interface ProfileNameRow {
+interface UserNameRow {
   id: string;
   full_name: string | null;
 }
@@ -55,16 +55,33 @@ export class CouplesService {
     }
 
     const { data: profiles, error: profilesError } = await supabaseAdmin
-      .from("profiles")
+      .from("app_users")
       .select("id, full_name")
       .in("id", memberIds);
 
     if (profilesError) {
-      throw new AppError("No se pudieron cargar los perfiles de la pareja", 500, profilesError.message);
+      const { data: legacyProfiles, error: legacyProfilesError } = await supabaseAdmin
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", memberIds);
+
+      if (legacyProfilesError) {
+        throw new AppError("No se pudieron cargar los perfiles de la pareja", 500, legacyProfilesError.message);
+      }
+
+      const profileMap = new Map(
+        ((legacyProfiles as UserNameRow[] | null) ?? []).map((profile) => [profile.id, profile.full_name ?? null])
+      );
+
+      return members.map((member) => ({
+        userId: member.user_id,
+        fullName: profileMap.get(member.user_id) ?? null,
+        role: member.role
+      }));
     }
 
     const profileMap = new Map(
-      ((profiles as ProfileNameRow[] | null) ?? []).map((profile) => [profile.id, profile.full_name ?? null])
+      ((profiles as UserNameRow[] | null) ?? []).map((profile) => [profile.id, profile.full_name ?? null])
     );
 
     return members.map((member) => ({
