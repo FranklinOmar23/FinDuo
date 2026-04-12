@@ -117,14 +117,14 @@ export class AuthService {
     const user = await this.getUserByEmail(payload.email);
 
     if (!user) {
-      throw new AppError("Credenciales inválidas", 401, error.message);
+      throw new AppError("Credenciales inválidas", 401);
     }
 
     const passwordMatches = await verifyPassword(payload.password, user.password_hash);
 
     if (!passwordMatches) {
       throw new AppError("Credenciales inválidas", 401);
-    };
+    }
 
     return this.buildAuthPayload(user);
   }
@@ -135,7 +135,7 @@ export class AuthService {
 
     if (!user) {
       throw new AppError("La sesión ya no es válida", 401);
-    };
+    }
 
     return this.buildAuthPayload(user);
   }
