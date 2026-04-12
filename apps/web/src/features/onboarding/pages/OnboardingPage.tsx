@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { CreateCoupleForm } from "../components/CreateCoupleForm";
 import { JoinCoupleForm } from "../components/JoinCoupleForm";
+import { acceptSoloMode } from "../lib/soloMode";
 import { useOnboarding } from "../hooks/useOnboarding";
 
 export const OnboardingPage = () => {
@@ -22,7 +23,11 @@ export const OnboardingPage = () => {
             <p className="theme-heading text-base font-semibold">¿Prefieres seguir sin pareja?</p>
             <p className="theme-muted mt-1 text-sm">Puedes entrar a la app ahora mismo y vincularte más adelante desde perfil o con un enlace de invitación.</p>
           </div>
-          <Link className="theme-outline-button inline-flex w-full items-center justify-center rounded-[14px] border px-4 py-3 text-sm font-semibold" to="/">
+          <Link
+            className="theme-outline-button inline-flex w-full items-center justify-center rounded-[14px] border px-4 py-3 text-sm font-semibold"
+            to="/"
+            onClick={() => acceptSoloMode()}
+          >
             Continuar sin pareja
           </Link>
         </div>

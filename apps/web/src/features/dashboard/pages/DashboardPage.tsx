@@ -4,6 +4,7 @@ import { ArrowRightLeft, Crosshair, Plus, Settings2, TrendingDown, Wallet } from
 import { Modal } from "../../../components/ui/Modal";
 import { AddContributionForm } from "../../contributions/components/AddContributionForm";
 import { useExpenses } from "../../expenses/hooks/useExpenses";
+import { acceptSoloMode, hasAcceptedSoloMode } from "../../onboarding/lib/soloMode";
 import { useDashboard } from "../hooks/useDashboard";
 import { useAuthStore } from "../../../store/authStore";
 import { useCoupleStore } from "../../../store/coupleStore";
@@ -30,6 +31,7 @@ const normalizeCategoryLabel = (value: string) => {
 
 export const DashboardPage = () => {
   const [openContributionModal, setOpenContributionModal] = useState(false);
+  const [soloModeAccepted, setSoloModeAccepted] = useState(() => hasAcceptedSoloMode());
   const { data } = useDashboard();
   const { expensesQuery } = useExpenses();
   const user = useAuthStore((state) => state.user);
@@ -43,13 +45,35 @@ export const DashboardPage = () => {
           <p className="phone-subtitle">Todavía no tienen un espacio conjunto</p>
         </header>
 
-        <article className="phone-card space-y-4 p-5">
-          <p className="theme-heading text-xl font-semibold">Ahora mismo estás usando FinDúo solo.</p>
-          <p className="theme-muted text-sm">Puedes seguir entrando y explorar la app por tu cuenta. Cuando quieran compartir gastos, aportes y metas, crea una pareja o únete con un código de invitación.</p>
-          <Link className="inline-flex items-center justify-center rounded-[14px] bg-teal px-4 py-3 text-sm font-semibold text-white" to="/onboarding">
-            Crear o unirme a una pareja
-          </Link>
-        </article>
+        {!soloModeAccepted ? (
+          <article className="phone-card space-y-4 p-5">
+            <p className="theme-heading text-xl font-semibold">Ahora mismo estás usando FinDúo solo.</p>
+            <p className="theme-muted text-sm">Puedes seguir entrando y explorar la app por tu cuenta, o crear una pareja cuando quieran empezar a compartir gastos, aportes y metas.</p>
+            <div className="grid gap-3">
+              <button
+                className="theme-outline-button inline-flex items-center justify-center rounded-[14px] border px-4 py-3 text-sm font-semibold"
+                type="button"
+                onClick={() => {
+                  acceptSoloMode();
+                  setSoloModeAccepted(true);
+                }}
+              >
+                Continuar sin pareja
+              </button>
+              <Link className="inline-flex items-center justify-center rounded-[14px] bg-teal px-4 py-3 text-sm font-semibold text-white" to="/onboarding">
+                Crear o unirme a una pareja
+              </Link>
+            </div>
+          </article>
+        ) : (
+          <article className="phone-card space-y-4 p-5">
+            <p className="theme-heading text-xl font-semibold">Modo solo activado.</p>
+            <p className="theme-muted text-sm">Puedes seguir navegando la app por tu cuenta. Cuando quieras compartir todo con otra persona, la opción de crear o unirte a una pareja seguirá disponible.</p>
+            <Link className="inline-flex items-center justify-center rounded-[14px] bg-teal px-4 py-3 text-sm font-semibold text-white" to="/onboarding">
+              Crear o unirme a una pareja
+            </Link>
+          </article>
+        )}
       </section>
     );
   }
