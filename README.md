@@ -19,9 +19,10 @@ Monorepo fullstack para una PWA de finanzas para parejas.
 
 1. Ejecuta `corepack pnpm install` en la raíz.
 2. Copia los archivos `.env.example` de `apps/api` y `apps/web` a sus variantes `.env`.
-3. Ejecuta el script [apps/api/supabase/custom-auth.sql](apps/api/supabase/custom-auth.sql) en el SQL Editor de Supabase.
+3. Si tu proyecto usaba el esquema viejo basado en `auth.users` y `profiles`, ejecuta primero [apps/api/supabase/reset-legacy-supabase-auth.sql](apps/api/supabase/reset-legacy-supabase-auth.sql).
+4. Ejecuta después [apps/api/supabase/custom-auth.sql](apps/api/supabase/custom-auth.sql) en el SQL Editor de Supabase.
 Esto crea las tablas de usuarios, parejas, membresías, aportes, gastos y metas de ahorro que la API espera.
-4. Completa las credenciales de Supabase y la URL del frontend.
+5. Completa las credenciales de Supabase y la URL del frontend.
 
 ## Variables de entorno
 
