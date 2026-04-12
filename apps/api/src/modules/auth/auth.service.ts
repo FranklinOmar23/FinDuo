@@ -1,4 +1,5 @@
 import type { AuthPayload, UserProfile } from "@finduo/types";
+import type { User } from "@supabase/supabase-js";
 import { supabase, supabaseAdmin } from "../../config/supabase.js";
 import { AppError } from "../../shared/errors/AppError.js";
 import type { LoginInput, LogoutInput, RefreshInput, RegisterInput } from "./auth.schema.js";
@@ -23,54 +24,84 @@ export class AuthService {
     };
   }
 
-  private async fetchProfile(userId: string, email: string): Promise<UserProfile> {
+  private mapAuthUser(user: User, email: string): UserProfile {
+    const fullName =
+      typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null;
+    const avatarUrl =
+      typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null;
+
+    return {
+      id: user.id,
+      email,
+      fullName,
+      avatarUrl,
+      coupleId: null,
+      createdAt: user.created_at,
+      updatedAt: user.updated_at ?? user.created_at
+    };
+  }
+
+  private async fetchProfile(user: User, email: string): Promise<UserProfile> {
     const { data, error } = await supabaseAdmin
       .from("profiles")
       .select("id, full_name, avatar_url, created_at")
-      .eq("id", userId)
-      .single();
+      .eq("id", user.id)
+      .maybeSingle();
 
     if (error || !data) {
-      throw new AppError("No se pudo cargar el perfil del usuario", 500, error?.message);
+      return this.mapAuthUser(user, email);
     }
 
     return this.mapProfile(data satisfies ProfileRow, email);
   }
 
-  async register(payload: RegisterInput): Promise<AuthPayload> {
-    const { data: createdUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
-      email: payload.email,
-      password: payload.password,
-      email_confirm: true,
-      user_metadata: {
-        full_name: payload.fullName
-      }
-    });
-
-    if (createUserError || !createdUser.user) {
-      throw new AppError("No se pudo registrar el usuario", 400, createUserError?.message);
-    }
-
-    const { error: profileError } = await supabaseAdmin.from("profiles").upsert(
+  private async ensureProfile(user: User, fullName: string | null) {
+    await supabaseAdmin.from("profiles").upsert(
       {
-        id: createdUser.user.id,
-        full_name: payload.fullName,
+        id: user.id,
+        full_name: fullName,
         avatar_url: null
       },
       {
         onConflict: "id"
       }
     );
+  }
 
-    if (profileError) {
-      await supabaseAdmin.auth.admin.deleteUser(createdUser.user.id);
-      throw new AppError("No se pudo crear el perfil del usuario", 400, profileError.message);
+  async register(payload: RegisterInput): Promise<AuthPayload> {
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email: payload.email,
+      password: payload.password,
+      options: {
+        data: {
+          full_name: payload.fullName
+        }
+      }
+    });
+
+    if (signUpError || !signUpData.user) {
+      throw new AppError("No se pudo registrar el usuario", 400, signUpError?.message);
     }
 
-    return this.login({
-      email: payload.email,
-      password: payload.password
-    });
+    await this.ensureProfile(signUpData.user, payload.fullName);
+
+    if (!signUpData.session) {
+      return this.login({
+        email: payload.email,
+        password: payload.password
+      });
+    }
+
+    const user = await this.fetchProfile(signUpData.user, signUpData.user.email ?? payload.email);
+
+    return {
+      user,
+      session: {
+        accessToken: signUpData.session.access_token,
+        refreshToken: signUpData.session.refresh_token,
+        expiresAt: signUpData.session.expires_at ?? null
+      }
+    };
   }
 
   async login(payload: LoginInput): Promise<AuthPayload> {
@@ -87,7 +118,12 @@ export class AuthService {
       throw new AppError("No se pudo iniciar sesión", 401);
     }
 
-    const user = await this.fetchProfile(data.user.id, data.user.email ?? payload.email);
+    await this.ensureProfile(
+      data.user,
+      typeof data.user.user_metadata?.full_name === "string" ? data.user.user_metadata.full_name : null
+    );
+
+    const user = await this.fetchProfile(data.user, data.user.email ?? payload.email);
 
     return {
       user,
@@ -112,7 +148,12 @@ export class AuthService {
       throw new AppError("La sesión ya no es válida", 401);
     }
 
-    const user = await this.fetchProfile(data.user.id, data.user.email ?? "");
+    await this.ensureProfile(
+      data.user,
+      typeof data.user.user_metadata?.full_name === "string" ? data.user.user_metadata.full_name : null
+    );
+
+    const user = await this.fetchProfile(data.user, data.user.email ?? "");
 
     return {
       user,
