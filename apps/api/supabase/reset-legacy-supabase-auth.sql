@@ -47,6 +47,7 @@ create table public.couples (
   name text not null,
   owner_id uuid not null references public.app_users(id) on delete cascade,
   invite_code text not null,
+  is_solo boolean not null default false,
   savings_percent numeric(5,2) not null default 10 check (savings_percent between 0 and 100),
   created_at timestamptz not null default timezone('utc', now())
 );

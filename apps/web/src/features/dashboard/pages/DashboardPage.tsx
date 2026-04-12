@@ -36,8 +36,22 @@ export const DashboardPage = () => {
   const { expensesQuery } = useExpenses();
   const user = useAuthStore((state) => state.user);
   const activeCouple = useCoupleStore((state) => state.activeCouple);
+  const summary = data ?? {
+    month: new Date().toISOString().slice(0, 7),
+    totalIncome: 0,
+    totalExpenses: 0,
+    reservedSavings: 0,
+    availableToSpend: 0,
+    contributions: [],
+    savingsGoals: []
+  };
+  const soloContributionAmount = summary.contributions
+    .filter((contribution) => contribution.userId === user?.id)
+    .reduce((sum, contribution) => sum + contribution.amount, 0);
+  const soloTopGoal = summary.savingsGoals[0] ?? null;
+  const soloTopGoalPercent = soloTopGoal && soloTopGoal.targetAmount > 0 ? Math.round((soloTopGoal.currentAmount / soloTopGoal.targetAmount) * 100) : 0;
 
-  if (!activeCouple) {
+  if (!activeCouple || activeCouple.isSolo) {
     return (
       <section className="space-y-4">
         <header className="flex items-start justify-between pt-2">
@@ -45,32 +59,38 @@ export const DashboardPage = () => {
             <p className="text-sm text-[#869592] first-letter:uppercase">{monthLabel}</p>
             <h1 className="phone-title">FinDúo</h1>
           </div>
-          <Link className="theme-outline-button inline-flex h-9 w-9 items-center justify-center rounded-full border transition hover:border-teal hover:text-teal" to="/profile">
-            <Settings2 className="h-4 w-4" strokeWidth={1.9} />
-          </Link>
+          <div className="flex items-center gap-2">
+            <button className="inline-flex items-center gap-2 rounded-full bg-teal px-4 py-2 text-sm font-semibold text-white" onClick={() => setOpenContributionModal(true)}>
+              <Plus className="h-4 w-4" strokeWidth={2.4} />
+              Abonar
+            </button>
+            <Link className="theme-outline-button inline-flex h-9 w-9 items-center justify-center rounded-full border transition hover:border-teal hover:text-teal" to="/profile">
+              <Settings2 className="h-4 w-4" strokeWidth={1.9} />
+            </Link>
+          </div>
         </header>
 
         <article className="relative overflow-hidden rounded-[22px] bg-teal p-5 text-white">
           <div className="absolute -right-6 top-3 h-20 w-20 rounded-full bg-white/10" />
           <div className="absolute -bottom-6 right-4 h-28 w-28 rounded-full bg-white/8" />
           <p className="text-sm font-semibold text-white/85">Disponible este mes</p>
-          <p className="mt-2 text-5xl font-bold leading-none">{formatMoney(0)}</p>
+          <p className="mt-2 text-5xl font-bold leading-none">{formatMoney(summary.availableToSpend)}</p>
           <div className="mt-5 flex items-center justify-between text-xs text-white/80">
             <span>Presupuesto usado</span>
-            <span>0%</span>
+            <span>{summary.totalIncome > 0 ? Math.round((summary.totalExpenses / summary.totalIncome) * 100) : 0}%</span>
           </div>
           <div className="mt-2 h-2 rounded-full bg-white/20">
-            <div className="h-2 rounded-full bg-white" style={{ width: "0%" }} />
+            <div className="h-2 rounded-full bg-white" style={{ width: `${summary.totalIncome > 0 ? Math.min(Math.round((summary.totalExpenses / summary.totalIncome) * 100), 100) : 0}%` }} />
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="metric-chip"><Wallet className="h-3.5 w-3.5" /> {formatMoney(0)}</span>
-            <span className="metric-chip"><TrendingDown className="h-3.5 w-3.5" /> {formatMoney(0)}</span>
-            <span className="metric-chip"><Crosshair className="h-3.5 w-3.5" /> {formatMoney(0)}</span>
+            <span className="metric-chip"><Wallet className="h-3.5 w-3.5" /> {formatMoney(summary.totalIncome)}</span>
+            <span className="metric-chip"><TrendingDown className="h-3.5 w-3.5" /> {formatMoney(summary.totalExpenses)}</span>
+            <span className="metric-chip"><Crosshair className="h-3.5 w-3.5" /> {formatMoney(summary.reservedSavings)}</span>
           </div>
         </article>
 
         <article className="phone-card space-y-4 p-5">
-          <p className="theme-heading text-xl font-semibold">{soloModeAccepted ? "Ahora mismo estás usando FinDúo solo." : "Antes de compartir, puedes empezar solo."}</p>
+          <p className="theme-heading text-xl font-semibold">Ahora mismo estás usando FinDúo solo.</p>
           <p className="theme-muted text-sm">Tienes acceso al inicio y a tu perfil. Cuando quieran compartir gastos, aportes y metas, crea una pareja o únete con un código de invitación.</p>
           <div className="grid gap-3">
             <button
@@ -81,7 +101,7 @@ export const DashboardPage = () => {
                 setSoloModeAccepted(true);
               }}
             >
-              {soloModeAccepted ? "Estás en modo solo" : "Continuar sin pareja"}
+              Estás en modo solo
             </button>
             <Link className="inline-flex items-center justify-center rounded-[14px] bg-teal px-4 py-3 text-sm font-semibold text-white" to="/onboarding">
               Crear o unirme a una pareja
@@ -98,9 +118,12 @@ export const DashboardPage = () => {
             <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-[#9bcfd2] bg-[#e5f3f5] text-[#1f6f73]">
               {(user?.fullName ?? "T").slice(0, 1).toUpperCase()}
             </div>
-            <p className="theme-heading mt-3 text-2xl font-bold">{formatMoney(0)}</p>
+            <p className="theme-heading mt-3 text-2xl font-bold">{formatMoney(soloContributionAmount)}</p>
             <p className="theme-muted text-sm">Tú</p>
           </div>
+          <button className="mt-4 w-full rounded-[14px] bg-teal px-4 py-3 text-sm font-semibold text-white" type="button" onClick={() => setOpenContributionModal(true)}>
+            Abonar ahora
+          </button>
         </article>
 
         <div>
@@ -112,8 +135,26 @@ export const DashboardPage = () => {
             <div className="flex items-start gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#fff4e6] text-[#ef7d4d]"><Crosshair className="h-5 w-5" strokeWidth={2} /></div>
               <div className="flex-1">
-                <p className="theme-heading font-semibold">Aún no tienes metas activas</p>
-                <p className="theme-muted mt-2 text-sm">Cuando quieras, podrás crear metas de ahorro compartidas desde esta misma app.</p>
+                {soloTopGoal ? (
+                  <>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="theme-heading font-semibold">{soloTopGoal.name}</p>
+                      <p className="text-sm font-semibold text-[#5b8fa0]">{soloTopGoalPercent}%</p>
+                    </div>
+                    <div className="mt-3 h-1.5 rounded-full bg-[#d7e6e7]">
+                      <div className="h-1.5 rounded-full bg-teal" style={{ width: `${Math.min(soloTopGoalPercent, 100)}%` }} />
+                    </div>
+                    <p className="theme-muted mt-2 text-sm">{formatMoney(soloTopGoal.currentAmount)} de {formatMoney(soloTopGoal.targetAmount)}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="theme-heading font-semibold">Aún no tienes metas activas</p>
+                    <p className="theme-muted mt-2 text-sm">Crea una meta personal para empezar a separar dinero dentro de tu propio espacio.</p>
+                  </>
+                )}
+                <Link className="mt-4 inline-flex items-center justify-center rounded-[14px] bg-teal px-4 py-3 text-sm font-semibold text-white" to="/savings">
+                  {soloTopGoal ? "Abonar a mis metas" : "Crear mi primera meta"}
+                </Link>
               </div>
             </div>
           </article>
@@ -137,23 +178,17 @@ export const DashboardPage = () => {
             </div>
             <div className="flex-1 space-y-1 text-sm">
               <p className="theme-heading font-semibold">Sin gastos registrados</p>
-              <p className="theme-muted text-sm">Cuando te vincules con una pareja podrás ver aquí la distribución por categoría.</p>
+              <p className="theme-muted text-sm">Registra gastos personales para ver aquí la distribución por categoría.</p>
             </div>
           </div>
         </article>
+
+        <Modal open={openContributionModal} title="Registrar aporte">
+          <AddContributionForm onSuccess={() => setOpenContributionModal(false)} />
+        </Modal>
       </section>
     );
   }
-
-  const summary = data ?? {
-    month: new Date().toISOString().slice(0, 7),
-    totalIncome: 0,
-    totalExpenses: 0,
-    reservedSavings: 0,
-    availableToSpend: 0,
-    contributions: [],
-    savingsGoals: []
-  };
 
   const usagePercent = summary.totalIncome > 0 ? Math.round((summary.totalExpenses / summary.totalIncome) * 100) : 0;
   const topGoal = summary.savingsGoals[0] ?? null;

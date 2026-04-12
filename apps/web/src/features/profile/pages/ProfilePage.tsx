@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Copy, Heart, Link2, MoonStar, SunMedium, UserPlus } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "../../../store/authStore";
 import { useCoupleStore } from "../../../store/coupleStore";
 import { useThemeStore } from "../../../store/themeStore";
@@ -56,7 +57,7 @@ export const ProfilePage = () => {
           <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#d39a6d] bg-[#8d7456] text-sm">{user?.fullName?.slice(0, 1).toUpperCase() ?? "P"}</div>
         </div>
         <p className="mt-4 text-xl font-bold">Tú &amp; Pareja</p>
-        <p className="mt-1 text-sm text-white/80">FinDúo · Finanzas en pareja</p>
+        <p className="mt-1 text-sm text-white/80">{couple?.isSolo ? "FinDúo · Espacio personal" : "FinDúo · Finanzas en pareja"}</p>
       </article>
 
       <article className="phone-card p-4">
@@ -67,7 +68,7 @@ export const ProfilePage = () => {
             <input className="theme-input mt-2 w-full rounded-full border px-4 py-3 outline-none" value={fullName} onChange={(event) => setFullName(event.target.value)} placeholder="Ej: Carlos" />
           </label>
           <label className="theme-muted block text-sm">
-            Nombre de tu pareja
+            {couple?.isSolo ? "Nombre para tu espacio" : "Nombre de tu pareja"}
             <input className="theme-input mt-2 w-full rounded-full border px-4 py-3 outline-none" value={partnerName} onChange={(event) => setPartnerName(event.target.value)} placeholder="Ej: María" />
           </label>
         </div>
@@ -86,7 +87,7 @@ export const ProfilePage = () => {
         </div>
       </article>
 
-      {couple ? (
+      {couple && !couple.isSolo ? (
         <article className="phone-card p-4">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -113,6 +114,16 @@ export const ProfilePage = () => {
               Abrir enlace
             </a>
           </div>
+        </article>
+      ) : null}
+
+      {couple?.isSolo ? (
+        <article className="phone-card p-4">
+          <p className="theme-heading text-sm font-semibold">Espacio personal activo</p>
+          <p className="theme-muted mt-2 text-sm">Ahora mismo estás usando FinDúo solo. Cuando quieras compartir gastos y metas, crea una pareja o únete con un código desde onboarding.</p>
+          <Link className="mt-4 inline-flex items-center justify-center rounded-[14px] bg-teal px-4 py-3 text-sm font-semibold text-white" to="/onboarding">
+            Crear o unirme a una pareja
+          </Link>
         </article>
       ) : null}
 

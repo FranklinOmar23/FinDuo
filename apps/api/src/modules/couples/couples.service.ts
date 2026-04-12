@@ -7,6 +7,7 @@ interface CoupleRow {
   id: string;
   name: string;
   invite_code: string;
+  is_solo: boolean;
   savings_percent: number;
   created_at: string;
 }
@@ -14,6 +15,17 @@ interface CoupleRow {
 interface CoupleMemberRow {
   user_id: string;
   role: string;
+}
+
+interface MembershipCoupleRef {
+  id: string;
+  is_solo: boolean;
+}
+
+interface MembershipRow {
+  id: string;
+  couple_id: string;
+  couples: MembershipCoupleRef | MembershipCoupleRef[] | null;
 }
 
 interface UserNameRow {
@@ -26,15 +38,71 @@ const buildInviteCode = () => {
 };
 
 export class CouplesService {
+  private getMembershipCoupleRef(membership: MembershipRow) {
+    if (Array.isArray(membership.couples)) {
+      return membership.couples[0] ?? null;
+    }
+
+    return membership.couples;
+  }
+
   private mapCouple(couple: CoupleRow, members: CoupleMemberSummary[]): CoupleSummary {
     return {
       id: couple.id,
       name: couple.name,
       inviteCode: couple.invite_code,
+      isSolo: couple.is_solo,
       savingsPercent: couple.savings_percent,
       membersCount: members.length,
       members
     };
+  }
+
+  private async getUserDisplayName(userId: string) {
+    const { data, error } = await supabaseAdmin
+      .from("app_users")
+      .select("full_name")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError("No se pudo consultar el usuario actual", 500, error.message);
+    }
+
+    return typeof data?.full_name === "string" && data.full_name.trim().length > 0 ? data.full_name.trim() : "Mi espacio";
+  }
+
+  private async createSoloWorkspace(userId: string) {
+    const displayName = await this.getUserDisplayName(userId);
+    const inviteCode = buildInviteCode();
+    const { data: couple, error: coupleError } = await supabaseAdmin
+      .from("couples")
+      .insert({
+        name: `${displayName}`,
+        owner_id: userId,
+        invite_code: inviteCode,
+        is_solo: true,
+        savings_percent: 10
+      })
+      .select("id, name, invite_code, is_solo, savings_percent, created_at")
+      .single();
+
+    if (coupleError || !couple) {
+      throw new AppError("No se pudo crear tu espacio personal", 400, coupleError?.message);
+    }
+
+    const { error: memberError } = await supabaseAdmin.from("couple_members").insert({
+      couple_id: couple.id,
+      user_id: userId,
+      role: "owner"
+    });
+
+    if (memberError) {
+      await supabaseAdmin.from("couples").delete().eq("id", couple.id);
+      throw new AppError("No se pudo activar tu espacio personal", 400, memberError.message);
+    }
+
+    return couple as CoupleRow;
   }
 
   private async getMembers(coupleId: string) {
@@ -94,7 +162,7 @@ export class CouplesService {
   private async findMembership(userId: string) {
     const { data, error } = await supabaseAdmin
       .from("couple_members")
-      .select("id, couple_id")
+      .select("id, couple_id, couples(id, is_solo)")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -102,13 +170,13 @@ export class CouplesService {
       throw new AppError("No se pudo consultar la membresía actual", 500, error.message);
     }
 
-    return data;
+    return (data as MembershipRow | null) ?? null;
   }
 
   private async getCoupleById(coupleId: string) {
     const { data, error } = await supabaseAdmin
       .from("couples")
-      .select("id, name, invite_code, savings_percent, created_at")
+      .select("id, name, invite_code, is_solo, savings_percent, created_at")
       .eq("id", coupleId)
       .single();
 
@@ -123,7 +191,31 @@ export class CouplesService {
     const existingMembership = await this.findMembership(userId);
 
     if (existingMembership) {
-      throw new AppError("Ya perteneces a una pareja", 409);
+      const activeCouple = this.getMembershipCoupleRef(existingMembership);
+
+      if (!activeCouple?.is_solo) {
+        throw new AppError("Ya perteneces a una pareja", 409);
+      }
+
+      const inviteCode = buildInviteCode();
+      const { data: upgradedCouple, error: upgradeError } = await supabaseAdmin
+        .from("couples")
+        .update({
+          name: payload.name,
+          invite_code: inviteCode,
+          is_solo: false,
+          savings_percent: payload.savingsPercent
+        })
+        .eq("id", activeCouple.id)
+        .select("id, name, invite_code, is_solo, savings_percent, created_at")
+        .single();
+
+      if (upgradeError || !upgradedCouple) {
+        throw new AppError("No se pudo convertir tu espacio personal en pareja", 400, upgradeError?.message);
+      }
+
+      const members = await this.getMembers(upgradedCouple.id);
+      return this.mapCouple(upgradedCouple as CoupleRow, members);
     }
 
     let attempt = 0;
@@ -136,9 +228,10 @@ export class CouplesService {
           name: payload.name,
           owner_id: userId,
           invite_code: inviteCode,
+          is_solo: false,
           savings_percent: payload.savingsPercent
         })
-        .select("id, name, invite_code, savings_percent, created_at")
+        .select("id, name, invite_code, is_solo, savings_percent, created_at")
         .single();
 
       if (coupleError) {
@@ -172,7 +265,9 @@ export class CouplesService {
     const membership = await this.findMembership(userId);
 
     if (!membership) {
-      return null;
+      const soloCouple = await this.createSoloWorkspace(userId);
+      const members = await this.getMembers(soloCouple.id);
+      return this.mapCouple(soloCouple, members);
     }
 
     const couple = await this.getCoupleById(String(membership.couple_id));
@@ -185,17 +280,27 @@ export class CouplesService {
     const existingMembership = await this.findMembership(userId);
 
     if (existingMembership) {
-      throw new AppError("Ya perteneces a una pareja", 409);
+      const activeCouple = this.getMembershipCoupleRef(existingMembership);
+
+      if (!activeCouple?.is_solo) {
+        throw new AppError("Ya perteneces a una pareja", 409);
+      }
     }
 
     const { data: couple, error } = await supabaseAdmin
       .from("couples")
-      .select("id, name, invite_code, savings_percent, created_at")
+      .select("id, name, invite_code, is_solo, savings_percent, created_at")
       .eq("invite_code", payload.inviteCode)
+      .eq("is_solo", false)
       .single();
 
     if (error || !couple) {
       throw new AppError("Código de invitación inválido", 404, error?.message);
+    }
+
+    if (existingMembership) {
+      await supabaseAdmin.from("couple_members").delete().eq("id", existingMembership.id);
+      await supabaseAdmin.from("couples").delete().eq("id", String(existingMembership.couple_id));
     }
 
     const { error: memberError } = await supabaseAdmin.from("couple_members").insert({
@@ -222,7 +327,7 @@ export class CouplesService {
         savings_percent: payload.savingsPercent
       })
       .eq("id", coupleId)
-      .select("id, name, invite_code, savings_percent, created_at")
+      .select("id, name, invite_code, is_solo, savings_percent, created_at")
       .single();
 
     if (error || !data) {

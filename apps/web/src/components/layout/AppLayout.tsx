@@ -96,7 +96,7 @@ export const AppLayout = ({ children }: PropsWithChildren) => {
     );
   }
 
-  if (activeCouple && location.pathname === "/onboarding") {
+  if (activeCouple && !activeCouple.isSolo && location.pathname === "/onboarding") {
     return <Navigate to="/" replace />;
   }
 

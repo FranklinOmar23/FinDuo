@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { api } from "../../../lib/api";
 import { useCoupleStore } from "../../../store/coupleStore";
+import { clearSoloMode } from "../lib/soloMode";
 
 export const useOnboarding = () => {
   const queryClient = useQueryClient();
@@ -34,6 +35,7 @@ export const useOnboarding = () => {
       return response.data.data;
     },
     onSuccess: (couple) => {
+      clearSoloMode();
       setActiveCouple(couple);
       void queryClient.invalidateQueries({ queryKey: ["couple", "me"] });
     }
@@ -45,6 +47,7 @@ export const useOnboarding = () => {
       return response.data.data;
     },
     onSuccess: (couple) => {
+      clearSoloMode();
       setActiveCouple(couple);
       void queryClient.invalidateQueries({ queryKey: ["couple", "me"] });
     }
