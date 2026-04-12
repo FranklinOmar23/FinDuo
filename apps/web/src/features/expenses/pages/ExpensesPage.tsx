@@ -91,7 +91,7 @@ export const ExpensesPage = () => {
         })}
       </div>
 
-      <Modal open={open} title="Registrar gasto">
+      <Modal open={open} title="Registrar gasto" onClose={() => setOpen(false)}>
         <AddExpenseForm onSuccess={() => setOpen(false)} />
       </Modal>
     </section>

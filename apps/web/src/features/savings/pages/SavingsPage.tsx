@@ -102,11 +102,11 @@ export const SavingsPage = () => {
         })}
       </div>
 
-      <Modal open={open} title="Nueva meta de ahorro">
+      <Modal open={open} title="Nueva meta de ahorro" onClose={() => setOpen(false)}>
         <AddGoalForm onSuccess={() => setOpen(false)} />
       </Modal>
 
-      <Modal open={Boolean(selectedGoal)} title="Abonar a la meta">
+      <Modal open={Boolean(selectedGoal)} title="Abonar a la meta" onClose={() => setSelectedGoalId(null)}>
         <form className="space-y-4" onSubmit={submitDeposit}>
           <p className="text-sm text-[#8a9896]">Meta seleccionada: {selectedGoal?.name}</p>
           <input

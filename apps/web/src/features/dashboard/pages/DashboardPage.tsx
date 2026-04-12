@@ -183,7 +183,7 @@ export const DashboardPage = () => {
           </div>
         </article>
 
-        <Modal open={openContributionModal} title="Registrar aporte">
+        <Modal open={openContributionModal} title="Registrar aporte" onClose={() => setOpenContributionModal(false)}>
           <AddContributionForm onSuccess={() => setOpenContributionModal(false)} />
         </Modal>
       </section>
@@ -377,7 +377,7 @@ export const DashboardPage = () => {
         </div>
       </article>
 
-      <Modal open={openContributionModal} title="Registrar aporte">
+      <Modal open={openContributionModal} title="Registrar aporte" onClose={() => setOpenContributionModal(false)}>
         <AddContributionForm onSuccess={() => setOpenContributionModal(false)} />
       </Modal>
     </section>

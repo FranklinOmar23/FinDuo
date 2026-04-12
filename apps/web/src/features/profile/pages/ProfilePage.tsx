@@ -53,10 +53,15 @@ export const ProfilePage = () => {
       <article className="relative overflow-hidden rounded-[22px] bg-teal p-5 text-center text-white">
         <div className="absolute right-4 top-3 h-16 w-16 rounded-full bg-white/10" />
         <div className="mx-auto flex w-fit items-center gap-2">
-          <Heart className="h-4 w-4 fill-[#ff5d5d] text-[#ff5d5d]" />
           <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#d39a6d] bg-[#8d7456] text-sm">{user?.fullName?.slice(0, 1).toUpperCase() ?? "P"}</div>
+          <Heart className="h-4 w-4 fill-[#ff5d5d] text-[#ff5d5d]" />
+          {!couple?.isSolo ? (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-[#f3d5cb] bg-[#fff1ea] text-sm text-[#d56f49]">
+              {partnerDisplayName.slice(0, 1).toUpperCase()}
+            </div>
+          ) : null}
         </div>
-        <p className="mt-4 text-xl font-bold">Tú &amp; Pareja</p>
+        <p className="mt-4 text-xl font-bold">{couple?.isSolo ? "Tu espacio personal" : `Tú & ${partnerDisplayName}`}</p>
         <p className="mt-1 text-sm text-white/80">{couple?.isSolo ? "FinDúo · Espacio personal" : "FinDúo · Finanzas en pareja"}</p>
       </article>
 
