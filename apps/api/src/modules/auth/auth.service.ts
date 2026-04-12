@@ -69,39 +69,39 @@ export class AuthService {
   }
 
   async register(payload: RegisterInput): Promise<AuthPayload> {
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    const { data: createdUser, error: createUserError } = await supabaseAdmin.auth.admin.createUser({
       email: payload.email,
       password: payload.password,
-      options: {
-        data: {
-          full_name: payload.fullName
-        }
+      email_confirm: true,
+      user_metadata: {
+        full_name: payload.fullName
       }
     });
 
-    if (signUpError || !signUpData.user) {
-      throw new AppError("No se pudo registrar el usuario", 400, signUpError?.message);
-    }
+    if (createUserError || !createdUser.user) {
+      const message = createUserError?.message?.toLowerCase() ?? "";
 
-    await this.ensureProfile(signUpData.user, payload.fullName);
-
-    if (!signUpData.session) {
-      return this.login({
-        email: payload.email,
-        password: payload.password
-      });
-    }
-
-    const user = await this.fetchProfile(signUpData.user, signUpData.user.email ?? payload.email);
-
-    return {
-      user,
-      session: {
-        accessToken: signUpData.session.access_token,
-        refreshToken: signUpData.session.refresh_token,
-        expiresAt: signUpData.session.expires_at ?? null
+      if (message.includes("already") || message.includes("registered") || message.includes("exists")) {
+        throw new AppError("Ese correo ya está registrado", 409, createUserError?.message);
       }
-    };
+
+      if (createUserError?.status === 401 || message.includes("unauthorized") || message.includes("jwt")) {
+        throw new AppError(
+          "La SERVICE_ROLE_KEY de Supabase no es válida o no tiene permisos de admin",
+          500,
+          createUserError?.message
+        );
+      }
+
+      throw new AppError("No se pudo registrar el usuario", 400, createUserError?.message);
+    }
+
+    await this.ensureProfile(createdUser.user, payload.fullName);
+
+    return this.login({
+      email: payload.email,
+      password: payload.password
+    });
   }
 
   async login(payload: LoginInput): Promise<AuthPayload> {
