@@ -26,9 +26,11 @@ export const clearPendingInviteCode = () => {
 };
 
 export const buildInviteLink = (inviteCode: string) => {
+  const normalizedInviteCode = inviteCode.trim().toUpperCase();
+
   if (typeof window === "undefined") {
-    return `/invite/${inviteCode}`;
+    return `/#/invite/${normalizedInviteCode}`;
   }
 
-  return `${window.location.origin}/invite/${inviteCode.trim().toUpperCase()}`;
+  return `${window.location.origin}/#/invite/${normalizedInviteCode}`;
 };

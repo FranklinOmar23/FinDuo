@@ -2,6 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "../store/authStore";
 
 const apiBaseUrl = import.meta.env.VITE_API_URL?.trim() || "https://finduo.onrender.com/api";
+const loginRoute = "/#/login";
 
 export const api = axios.create({
   baseURL: apiBaseUrl,
@@ -40,8 +41,8 @@ api.interceptors.response.use(
 
     if (!authState.refreshToken) {
       authState.clearSession();
-      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-        window.location.assign("/login");
+      if (typeof window !== "undefined" && window.location.hash !== "#/login") {
+        window.location.assign(loginRoute);
       }
       return Promise.reject(error);
     }
@@ -66,8 +67,8 @@ api.interceptors.response.use(
         })
         .catch((refreshError) => {
           useAuthStore.getState().clearSession();
-          if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-            window.location.assign("/login");
+          if (typeof window !== "undefined" && window.location.hash !== "#/login") {
+            window.location.assign(loginRoute);
           }
           throw refreshError;
         })
