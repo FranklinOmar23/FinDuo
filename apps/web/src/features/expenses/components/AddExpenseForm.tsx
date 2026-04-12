@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { Input } from "../../../components/ui/Input";
+import { extractApiErrorMessage } from "../../../lib/extractApiErrorMessage";
 import { useExpenses } from "../hooks/useExpenses";
 
 interface AddExpenseFormProps {
@@ -23,18 +24,25 @@ export const AddExpenseForm = ({ onSuccess }: AddExpenseFormProps) => {
   ];
   const [form, setForm] = useState({ title: "", amount: "", category: "otros" });
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await addExpenseMutation.mutateAsync({
-      title: form.title,
-      amount: Number(form.amount),
-      category: form.category,
-      expenseDate: new Date().toISOString()
-    });
-    setForm({ title: "", amount: "", category: "otros" });
-    setCategoryMenuOpen(false);
-    onSuccess?.();
+    setErrorMessage("");
+
+    try {
+      await addExpenseMutation.mutateAsync({
+        title: form.title,
+        amount: Number(form.amount),
+        category: form.category,
+        expenseDate: new Date().toISOString()
+      });
+      setForm({ title: "", amount: "", category: "otros" });
+      setCategoryMenuOpen(false);
+      onSuccess?.();
+    } catch (error) {
+      setErrorMessage(extractApiErrorMessage(error, "No se pudo registrar el gasto."));
+    }
   };
 
   const selectedCategory = categories.find((item) => item.value === form.category)?.label ?? "Otros";
@@ -83,6 +91,7 @@ export const AddExpenseForm = ({ onSuccess }: AddExpenseFormProps) => {
             ) : null}
           </div>
         </label>
+        {errorMessage ? <p className="text-sm font-medium text-[#d14f3f]">{errorMessage}</p> : null}
         <Button className="w-full" type="submit" variant="secondary">Registrar gasto</Button>
       </form>
     </Card>

@@ -1,8 +1,8 @@
 import { useState } from "react";
-import axios from "axios";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { Input } from "../../../components/ui/Input";
+import { extractApiErrorMessage } from "../../../lib/extractApiErrorMessage";
 import { useSavings } from "../hooks/useSavings";
 
 interface AddGoalFormProps {
@@ -31,12 +31,7 @@ export const AddGoalForm = ({ onSuccess }: AddGoalFormProps) => {
       setForm({ name: "", targetAmount: "", currentAmount: "0", deadline: "" });
       onSuccess?.();
     } catch (error) {
-      if (axios.isAxiosError<{ message?: string }>(error)) {
-        setErrorMessage(error.response?.data?.message ?? "No se pudo crear la meta.");
-        return;
-      }
-
-      setErrorMessage("No se pudo crear la meta.");
+      setErrorMessage(extractApiErrorMessage(error, "No se pudo crear la meta."));
     }
   };
 
