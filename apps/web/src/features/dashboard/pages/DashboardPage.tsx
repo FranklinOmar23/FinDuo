@@ -44,8 +44,8 @@ export const DashboardPage = () => {
         </header>
 
         <article className="phone-card space-y-4 p-5">
-          <p className="theme-heading text-xl font-semibold">Puedes seguir explorando la app sin crear pareja todavía.</p>
-          <p className="theme-muted text-sm">Cuando quieran empezar a compartir gastos, aportes y metas, creen una pareja o únanse con un código de invitación.</p>
+          <p className="theme-heading text-xl font-semibold">Ahora mismo estás usando FinDúo solo.</p>
+          <p className="theme-muted text-sm">Puedes seguir entrando y explorar la app por tu cuenta. Cuando quieran compartir gastos, aportes y metas, crea una pareja o únete con un código de invitación.</p>
           <Link className="inline-flex items-center justify-center rounded-[14px] bg-teal px-4 py-3 text-sm font-semibold text-white" to="/onboarding">
             Crear o unirme a una pareja
           </Link>
