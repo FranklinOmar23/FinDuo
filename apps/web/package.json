@@ -14,6 +14,7 @@
     "@finduo/types": "workspace:*",
     "@tanstack/react-query": "^5.66.9",
     "axios": "^1.7.9",
+    "driver.js": "^1.4.0",
     "lucide-react": "^1.8.0",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",

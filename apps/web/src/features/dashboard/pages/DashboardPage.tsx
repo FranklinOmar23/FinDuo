@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRightLeft, Crosshair, Plus, Settings2, TrendingDown, Wallet } from "lucide-react";
 import { Modal } from "../../../components/ui/Modal";
 import { AddContributionForm } from "../../contributions/components/AddContributionForm";
+import { MascotCoachCard } from "../../mascot/components/MascotCoachCard";
+import { markMascotEventSeen, shouldShowMascotEvent } from "../../mascot/lib/mascotGuide";
 import { useExpenses } from "../../expenses/hooks/useExpenses";
 import { acceptSoloMode, hasAcceptedSoloMode } from "../../onboarding/lib/soloMode";
 import { useDashboard } from "../hooks/useDashboard";
@@ -50,11 +52,82 @@ export const DashboardPage = () => {
     .reduce((sum, contribution) => sum + contribution.amount, 0);
   const soloTopGoal = summary.savingsGoals[0] ?? null;
   const soloTopGoalPercent = soloTopGoal && soloTopGoal.targetAmount > 0 ? Math.round((soloTopGoal.currentAmount / soloTopGoal.targetAmount) * 100) : 0;
+  const latestContributionAt = summary.contributions.reduce<number | null>((latest, contribution) => {
+    const contributionTime = new Date(contribution.createdAt).getTime();
+
+    if (!Number.isFinite(contributionTime)) {
+      return latest;
+    }
+
+    return latest === null ? contributionTime : Math.max(latest, contributionTime);
+  }, null);
+  const inactiveDays = latestContributionAt === null ? null : Math.floor((Date.now() - latestContributionAt) / (1000 * 60 * 60 * 24));
+
+  const mascotPrompt = (() => {
+    if (!user?.id) {
+      return null;
+    }
+
+    if (inactiveDays !== null && inactiveDays >= 10 && shouldShowMascotEvent(user.id, "inactive-reminder", 18)) {
+      return {
+        key: "inactive-reminder",
+        title: activeCouple?.isSolo ? "Ey, tu plan no camina solo" : "Ey, la meta de la dupla no se mueve sola",
+        message: activeCouple?.isSolo
+          ? `Llevas ${inactiveDays} días sin aportar. En modo solo tu constancia es la que manda, así que vuelve a poner a trabajar ese ahorro.`
+          : `Llevan ${inactiveDays} días sin aportar. En modo pareja el avance se enfría rápido cuando ninguno empuja la meta.`,
+        accent: activeCouple?.isSolo
+          ? "Un abono pequeño también cuenta cuando lo haces con disciplina."
+          : "Aunque sea un empujón corto, lo importante es que la dupla no pierda tracción."
+      };
+    }
+
+    const mainGoal = summary.savingsGoals[0] ?? null;
+    const mainGoalPercent = mainGoal && mainGoal.targetAmount > 0 ? Math.round((mainGoal.currentAmount / mainGoal.targetAmount) * 100) : 0;
+
+    if (mainGoal && mainGoalPercent >= 100 && shouldShowMascotEvent(user.id, `goal-${mainGoal.id}-100`, 9999)) {
+      return {
+        key: `goal-${mainGoal.id}-100`,
+        title: activeCouple?.isSolo ? "Meta cumplida, monstruo" : "Meta cumplida, dupla fina",
+        message: activeCouple?.isSolo
+          ? `La meta ${mainGoal.name} ya está completa. Esto es puro mérito tuyo: orden, paciencia y cabeza fría.`
+          : `La meta ${mainGoal.name} ya está completa. Así sí me gusta ver una pareja que convierte acuerdos en resultados.`,
+        accent: activeCouple?.isSolo
+          ? "No te frenes: una persona constante se vuelve peligrosa para cualquier meta grande."
+          : "No se duerman: pongan la siguiente meta antes de gastarse la emoción."
+      };
+    }
+
+    if (mainGoal && mainGoalPercent >= 50 && shouldShowMascotEvent(user.id, `goal-${mainGoal.id}-50`, 9999)) {
+      return {
+        key: `goal-${mainGoal.id}-50`,
+        title: activeCouple?.isSolo ? "Vas recio, no aflojes" : "Van bien, no aflojen",
+        message: activeCouple?.isSolo
+          ? `Tu meta ${mainGoal.name} ya llegó al ${mainGoalPercent}%. Ya no es intención: ya es tracción real.`
+          : `La meta ${mainGoal.name} ya llegó al ${mainGoalPercent}%. La dupla ya trae vuelo y eso se nota.`,
+        accent: activeCouple?.isSolo
+          ? "Ese 50% demuestra que sí puedes sostenerte sin que nadie te empuje."
+          : "Ese 50% merece celebración corta y disciplina larga para los dos."
+      };
+    }
+
+    if ((summary.totalIncome > 0 || summary.savingsGoals.length > 0) && shouldShowMascotEvent(user.id, "casual-check-in", 20)) {
+      return {
+        key: "casual-check-in",
+        title: "Ando echando un vistazo",
+        message: activeCouple?.isSolo
+          ? "Solo pasé a ver cómo va tu orden financiero. No te me desvíes que vas agarrando buen camino."
+          : "Solo pasé a ver cómo va la dupla. Cuando los números se hablan claro, la pareja respira mejor.",
+        accent: "Sigan así y me van a volver un señor billete orgulloso."
+      };
+    }
+
+    return null;
+  })();
 
   if (!activeCouple || activeCouple.isSolo) {
     return (
       <section className="space-y-4">
-        <header className="flex items-start justify-between pt-2">
+        <header className="flex items-start justify-between pt-2" data-tour="dashboard-header">
           <div>
             <p className="text-sm text-[#869592] first-letter:uppercase">{monthLabel}</p>
             <h1 className="phone-title">FinDúo</h1>
@@ -70,7 +143,7 @@ export const DashboardPage = () => {
           </div>
         </header>
 
-        <article className="relative overflow-hidden rounded-[22px] bg-teal p-5 text-white">
+        <article className="relative overflow-hidden rounded-[22px] bg-teal p-5 text-white" data-tour="dashboard-summary">
           <div className="absolute -right-6 top-3 h-20 w-20 rounded-full bg-white/10" />
           <div className="absolute -bottom-6 right-4 h-28 w-28 rounded-full bg-white/8" />
           <p className="text-sm font-semibold text-white/85">Disponible este mes</p>
@@ -109,6 +182,19 @@ export const DashboardPage = () => {
           </div>
         </article>
 
+        {mascotPrompt ? (
+          <MascotCoachCard
+            title={mascotPrompt.title}
+            message={mascotPrompt.message}
+            accent={mascotPrompt.accent}
+            onDismiss={() => {
+              if (user?.id) {
+                markMascotEventSeen(user.id, mascotPrompt.key);
+              }
+            }}
+          />
+        ) : null}
+
         <article className="phone-card p-4">
           <div className="flex items-center justify-between">
             <p className="theme-muted text-[11px] uppercase tracking-[0.18em]">Aportes del mes</p>
@@ -126,7 +212,7 @@ export const DashboardPage = () => {
           </button>
         </article>
 
-        <div>
+        <div data-tour="dashboard-savings">
           <div className="mb-2 flex items-center justify-between px-1">
             <h2 className="theme-heading text-base font-semibold">Metas de ahorro</h2>
             <Link className="text-xs font-semibold text-teal" to="/savings">Ver todas</Link>
@@ -236,10 +322,9 @@ export const DashboardPage = () => {
   });
   const chartLegend = categoryEntries.slice(0, 4);
   const categoryCountLabel = `${chartLegend.length} ${chartLegend.length === 1 ? "categoría" : "categorías"}`;
-
   return (
     <section className="space-y-4">
-      <header className="flex items-start justify-between pt-2">
+      <header className="flex items-start justify-between pt-2" data-tour="dashboard-header">
         <div>
           <p className="text-sm text-[#869592] first-letter:uppercase">{monthLabel}</p>
           <h1 className="phone-title">FinDúo</h1>
@@ -255,7 +340,7 @@ export const DashboardPage = () => {
         </div>
       </header>
 
-      <article className="relative overflow-hidden rounded-[22px] bg-teal p-5 text-white">
+      <article className="relative overflow-hidden rounded-[22px] bg-teal p-5 text-white" data-tour="dashboard-summary">
         <div className="absolute -right-6 top-3 h-20 w-20 rounded-full bg-white/10" />
         <div className="absolute -bottom-6 right-4 h-28 w-28 rounded-full bg-white/8" />
         <p className="text-sm font-semibold text-white/85">Disponible este mes</p>
@@ -294,7 +379,21 @@ export const DashboardPage = () => {
         </div>
       </article>
 
-      <div>
+      {mascotPrompt ? (
+        <MascotCoachCard
+          title={mascotPrompt.title}
+          message={mascotPrompt.message}
+          accent={mascotPrompt.accent}
+          mode="couple"
+          onDismiss={() => {
+            if (user?.id) {
+              markMascotEventSeen(user.id, mascotPrompt.key);
+            }
+          }}
+        />
+      ) : null}
+
+      <div data-tour="dashboard-savings">
         <div className="mb-2 flex items-center justify-between px-1">
           <h2 className="theme-heading text-base font-semibold">Metas de ahorro</h2>
           <Link className="text-xs font-semibold text-teal" to="/savings">Ver todas</Link>

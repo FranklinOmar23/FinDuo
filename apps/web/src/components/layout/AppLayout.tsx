@@ -71,7 +71,7 @@ export const AppLayout = ({ children }: PropsWithChildren) => {
   }, [activeCouple, autoJoinMutation, coupleQuery.data, coupleQuery.isLoading, pendingInviteCode]);
 
   useEffect(() => {
-    if (!user?.id || !activeCouple || location.pathname === "/onboarding") {
+    if (!user?.id || !activeCouple || location.pathname !== "/") {
       return;
     }
 
@@ -107,7 +107,7 @@ export const AppLayout = ({ children }: PropsWithChildren) => {
         {children}
       </main>
       <BottomNav />
-      <AppTourModal open={tourOpen} onClose={handleTourClose} />
+      <AppTourModal open={tourOpen} onClose={handleTourClose} userName={user?.fullName} isSolo={activeCouple?.isSolo} />
     </div>
   );
 };

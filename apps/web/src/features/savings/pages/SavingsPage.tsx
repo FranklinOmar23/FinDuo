@@ -2,7 +2,11 @@ import { useState } from "react";
 import { Crosshair, Plus, Trash2 } from "lucide-react";
 import { AddGoalForm } from "../components/AddGoalForm";
 import { Modal } from "../../../components/ui/Modal";
+import { MascotCoachCard } from "../../mascot/components/MascotCoachCard";
+import { markMascotEventSeen, shouldShowMascotEvent } from "../../mascot/lib/mascotGuide";
 import { useSavings } from "../hooks/useSavings";
+import { useAuthStore } from "../../../store/authStore";
+import { useCoupleStore } from "../../../store/coupleStore";
 
 const formatMoney = (value: number) => {
   return new Intl.NumberFormat("es-MX", {
@@ -16,12 +20,50 @@ export const SavingsPage = () => {
   const [open, setOpen] = useState(false);
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [depositAmount, setDepositAmount] = useState("");
+  const user = useAuthStore((state) => state.user);
+  const activeCouple = useCoupleStore((state) => state.activeCouple);
   const { savingsQuery, updateAmountMutation, deleteGoalMutation } = useSavings();
   const goals = savingsQuery.data ?? [];
   const totalCurrent = goals.reduce((sum, goal) => sum + goal.currentAmount, 0);
   const totalReserved = goals.reduce((sum, goal) => sum + goal.targetAmount, 0);
+  const highlightedGoal = goals[0] ?? null;
+  const highlightedGoalPercent = highlightedGoal && highlightedGoal.targetAmount > 0 ? Math.round((highlightedGoal.currentAmount / highlightedGoal.targetAmount) * 100) : 0;
 
   const selectedGoal = goals.find((goal) => goal.id === selectedGoalId) ?? null;
+
+  const mascotSavingsMessage = (() => {
+    if (!user?.id || !highlightedGoal) {
+      return null;
+    }
+
+    if (highlightedGoalPercent >= 100 && shouldShowMascotEvent(user.id, `goal-${highlightedGoal.id}-100`, 9999)) {
+      return {
+        key: `goal-${highlightedGoal.id}-100`,
+        title: activeCouple?.isSolo ? "Meta cerrada, crack" : "Meta cerrada, dupla firme",
+        message: activeCouple?.isSolo
+          ? `La meta ${highlightedGoal.name} ya está completa. El mérito es tuyo por aguantar el plan sin soltarlo.`
+          : `La meta ${highlightedGoal.name} ya está completa. El Señor Dinero aprueba esa coordinación en pareja.`,
+        accent: activeCouple?.isSolo
+          ? "Aprovecha el envión: quien cumple una meta solo, ya sabe construir la siguiente."
+          : "Saque otra meta mientras el impulso de los dos sigue caliente."
+      };
+    }
+
+    if (highlightedGoalPercent >= 50 && shouldShowMascotEvent(user.id, `goal-${highlightedGoal.id}-50`, 9999)) {
+      return {
+        key: `goal-${highlightedGoal.id}-50`,
+        title: activeCouple?.isSolo ? "Vas muy bien" : "Van muy bien",
+        message: activeCouple?.isSolo
+          ? `Tu meta ${highlightedGoal.name} ya cruzó la mitad con ${highlightedGoalPercent}%. Sigue así, que vas construyendo confianza contigo.`
+          : `La meta ${highlightedGoal.name} ya cruzó la mitad con ${highlightedGoalPercent}%. Cuando los dos sostienen el ritmo, el progreso se nota de verdad.`,
+        accent: activeCouple?.isSolo
+          ? "Ese porcentaje ya no es promesa, ya es progreso serio hecho por ti."
+          : "Ese porcentaje ya no es promesa, ya es progreso serio de equipo."
+      };
+    }
+
+    return null;
+  })();
 
   const submitDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -69,6 +111,20 @@ export const SavingsPage = () => {
           <p className="mt-1 text-3xl font-bold text-[#17373c]">{goals.length}</p>
         </div>
       </article>
+
+      {mascotSavingsMessage ? (
+        <MascotCoachCard
+          title={mascotSavingsMessage.title}
+          message={mascotSavingsMessage.message}
+          accent={mascotSavingsMessage.accent}
+          mode={activeCouple?.isSolo ? "solo" : "couple"}
+          onDismiss={() => {
+            if (user?.id) {
+              markMascotEventSeen(user.id, mascotSavingsMessage.key);
+            }
+          }}
+        />
+      ) : null}
 
       <div>
         <h2 className="mb-3 text-base font-semibold text-[#17373c]">Mis metas</h2>
