@@ -205,6 +205,41 @@ body.finduo-dark .text-\[\#9ca7a6\] {
   }
 }
 
+@keyframes dashboard-glow-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+    filter: blur(0px) brightness(1);
+    transform: translate3d(0, 0, 0) scale(0.92);
+  }
+
+  38% {
+    opacity: 0.48;
+    filter: blur(2px) brightness(1.18);
+    transform: translate3d(0, 6px, 0) scale(1.03);
+  }
+
+  62% {
+    opacity: 0.3;
+    filter: blur(1px) brightness(1.04);
+    transform: translate3d(0, 10px, 0) scale(0.98);
+  }
+}
+
+.dashboard-glow {
+  pointer-events: none;
+  will-change: transform, opacity, filter;
+  animation: dashboard-glow-pulse 4.6s ease-in-out infinite;
+}
+
+.dashboard-glow-primary {
+  animation-delay: 0s;
+}
+
+.dashboard-glow-secondary {
+  animation-delay: 0.9s;
+}
+
 .mascot-bob {
   animation: mascot-bob 3.6s ease-in-out infinite;
 }
@@ -215,6 +250,14 @@ body.finduo-dark .text-\[\#9ca7a6\] {
 
 .driver-active .bottom-nav {
   z-index: 60;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-glow,
+  .mascot-bob,
+  .mascot-float-in {
+    animation: none;
+  }
 }
 
 .finduo-driver-popover {

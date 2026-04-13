@@ -20,7 +20,10 @@ export const useExpenses = () => {
       const response = await api.get<ApiResponse<Expense[]>>("/expenses");
       return response.data.data;
     },
-    enabled: Boolean(activeCouple)
+    enabled: Boolean(activeCouple),
+    refetchInterval: 4000,
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true
   });
 
   const addExpenseMutation = useMutation({

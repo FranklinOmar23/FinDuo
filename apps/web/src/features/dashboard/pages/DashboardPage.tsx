@@ -144,8 +144,8 @@ export const DashboardPage = () => {
         </header>
 
         <article className="relative overflow-hidden rounded-[22px] bg-teal p-5 text-white" data-tour="dashboard-summary">
-          <div className="absolute -right-6 top-3 h-20 w-20 rounded-full bg-white/10" />
-          <div className="absolute -bottom-6 right-4 h-28 w-28 rounded-full bg-white/8" />
+          <div className="dashboard-glow dashboard-glow-primary absolute -right-6 top-3 h-20 w-20 rounded-full bg-white/10" />
+          <div className="dashboard-glow dashboard-glow-secondary absolute -bottom-6 right-4 h-28 w-28 rounded-full bg-white/8" />
           <p className="text-sm font-semibold text-white/85">Disponible este mes</p>
           <p className="mt-2 text-5xl font-bold leading-none">{formatMoney(summary.availableToSpend)}</p>
           <div className="mt-5 flex items-center justify-between text-xs text-white/80">
@@ -341,8 +341,8 @@ export const DashboardPage = () => {
       </header>
 
       <article className="relative overflow-hidden rounded-[22px] bg-teal p-5 text-white" data-tour="dashboard-summary">
-        <div className="absolute -right-6 top-3 h-20 w-20 rounded-full bg-white/10" />
-        <div className="absolute -bottom-6 right-4 h-28 w-28 rounded-full bg-white/8" />
+        <div className="dashboard-glow dashboard-glow-primary absolute -right-6 top-3 h-20 w-20 rounded-full bg-white/10" />
+        <div className="dashboard-glow dashboard-glow-secondary absolute -bottom-6 right-4 h-28 w-28 rounded-full bg-white/8" />
         <p className="text-sm font-semibold text-white/85">Disponible este mes</p>
         <p className="mt-2 text-5xl font-bold leading-none">{formatMoney(summary.availableToSpend)}</p>
         <div className="mt-5 flex items-center justify-between text-xs text-white/80">
