@@ -11,7 +11,7 @@ const items = [
 
 export const BottomNav = () => {
   return (
-    <nav className="bottom-nav fixed bottom-0 left-1/2 z-40 flex w-full max-w-md -translate-x-1/2 border-t px-2 pb-3 pt-2" data-tour="bottom-nav">
+    <nav className="bottom-nav fixed bottom-0 z-40 flex w-full border-t px-2 pb-3 pt-2" data-tour="bottom-nav">
       {items.map((item) => (
         <NavLink
           key={item.to}

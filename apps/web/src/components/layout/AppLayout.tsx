@@ -104,7 +104,9 @@ export const AppLayout = ({ children }: PropsWithChildren) => {
     <div className="page-shell relative">
       <main className="flex-1 space-y-4">
         <InstallPwaBanner />
-        {children}
+        <div className="route-screen" key={location.pathname}>
+          {children}
+        </div>
       </main>
       <BottomNav />
       <AppTourModal open={tourOpen} onClose={handleTourClose} userName={user?.fullName} isSolo={activeCouple?.isSolo} />

@@ -3,6 +3,7 @@ import { AppLayout } from "../components/layout/AppLayout";
 import { PrivateRoute } from "../components/layout/PrivateRoute";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { BalancePage } from "../features/balance/pages/BalancePage";
+import { BalanceHistoryPage } from "../features/balance/pages/BalanceHistoryPage";
 import { RegisterPage } from "../features/auth/pages/RegisterPage";
 import { ContributionsPage } from "../features/contributions/pages/ContributionsPage";
 import { InvitePartnerPage } from "../features/couples/pages/InvitePartnerPage";
@@ -71,6 +72,16 @@ export const router = createHashRouter([
       <PrivateRoute>
         <AppLayout>
           <BalancePage />
+        </AppLayout>
+      </PrivateRoute>
+    )
+  },
+  {
+    path: "/balance/history",
+    element: (
+      <PrivateRoute>
+        <AppLayout>
+          <BalanceHistoryPage />
         </AppLayout>
       </PrivateRoute>
     )
