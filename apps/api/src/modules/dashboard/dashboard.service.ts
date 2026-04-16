@@ -11,9 +11,9 @@ export class DashboardService {
       savingsService.getManualSavingsForMonth(userId, month)
     ]);
 
-    // Extraer arrays de paginación
-    const contributions = contributionsResult.data;
-    const expenses = expensesResult.data;
+    // Extraer arrays de las respuestas con paginación
+    const contributions = Array.isArray(contributionsResult) ? contributionsResult : contributionsResult.data;
+    const expenses = Array.isArray(expensesResult) ? expensesResult : expensesResult.data;
 
     const totalIncome = contributions.reduce((sum: number, item: any) => sum + item.amount, 0);
     const totalExpenses = expenses.reduce((sum: number, item: any) => sum + item.amount, 0);
