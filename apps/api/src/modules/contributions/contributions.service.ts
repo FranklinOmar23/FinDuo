@@ -27,41 +27,25 @@ export class ContributionsService {
     };
   }
 
-  async listContributions(userId: string, filters: { month?: string; page?: number; limit?: number }) {
+  async listContributions(userId: string, filters: { month?: string }) {
     const context = await getActiveCoupleContext(userId);
     const range = getMonthRange(filters.month);
 
-    // Paginación con defaults seguros
-    const limit = Math.min(filters.limit ?? 50, 200); // max 200 items
-    const page = Math.max(filters.page ?? 0, 0);
-    const offset = page * limit;
-
-    const { data, error, count } = await supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from("contributions")
-      .select("id, couple_id, user_id, amount, period, note, created_at", { count: "exact" })
+      .select("id, couple_id, user_id, amount, period, note, created_at")
       .eq("couple_id", context.coupleId)
       .gte("created_at", range.start.toISOString())
       .lt("created_at", range.end.toISOString())
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+      .order("created_at", { ascending: false });
 
     if (error) {
       throw new AppError("No se pudieron obtener los aportes", 500, error.message);
     }
 
-    const mappedData = (data as ContributionRow[]).map((row) => 
+    return (data as ContributionRow[]).map((row) => 
       this.mapContribution(row, context.savingsPercent)
     );
-
-    return {
-      data: mappedData,
-      pagination: {
-        page,
-        limit,
-        total: count ?? 0,
-        hasMore: (page + 1) * limit < (count ?? 0)
-      }
-    };
   }
 
   async createContribution(userId: string, payload: { amount: number; contributionDate: string; note?: string }) {

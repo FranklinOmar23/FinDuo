@@ -17,8 +17,8 @@ export const useContributions = () => {
   const contributionsQuery = useQuery({
     queryKey: ["contributions"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<{ data: Contribution[]; pagination: any }>>("/contributions");
-      return response.data.data.data; // Extraer array del objeto con paginación
+      const response = await api.get<ApiResponse<Contribution[]>>("/contributions");
+      return response.data.data;
     },
     enabled: Boolean(activeCouple),
     refetchInterval: 4000,

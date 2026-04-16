@@ -29,44 +29,30 @@ export class ExpensesService {
     };
   }
 
-  async listExpenses(userId: string, filters: { month?: string; category?: string; page?: number; limit?: number }) {
+  async listExpenses(userId: string, filters: { month?: string; category?: string }) {
     const context = await getActiveCoupleContext(userId);
     const range = getMonthRange(filters.month);
-    
-    // Paginación con defaults seguros
-    const limit = Math.min(filters.limit ?? 50, 200); // max 200 items por página
-    const page = Math.max(filters.page ?? 0, 0); // página 0-indexed
-    const offset = page * limit;
 
     let query = supabaseAdmin
       .from("expenses")
-      .select("id, couple_id, user_id, amount, category, note, expense_date, created_at", { count: "exact" })
+      .select("id, couple_id, user_id, amount, category, note, expense_date, created_at")
       .eq("couple_id", context.coupleId)
       .not("note", "like", `${INTERNAL_SAVINGS_EXPENSE_PREFIX}%`)
       .gte("expense_date", range.start.toISOString().slice(0, 10))
       .lt("expense_date", range.end.toISOString().slice(0, 10))
-      .order("expense_date", { ascending: false })
-      .range(offset, offset + limit - 1);
+      .order("expense_date", { ascending: false });
 
     if (filters.category) {
       query = query.eq("category", filters.category);
     }
 
-    const { data, error, count } = await query;
+    const { data, error } = await query;
 
     if (error) {
       throw new AppError("No se pudieron obtener los gastos", 500, error.message);
     }
 
-    return {
-      data: (data as ExpenseRow[]).map((row) => this.mapExpense(row)),
-      pagination: {
-        page,
-        limit,
-        total: count ?? 0,
-        hasMore: (page + 1) * limit < (count ?? 0)
-      }
-    };
+    return (data as ExpenseRow[]).map((row) => this.mapExpense(row));
   }
 
   async createExpense(userId: string, payload: { title: string; amount: number; category: string; expenseDate: string }) {
