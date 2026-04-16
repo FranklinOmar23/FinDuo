@@ -17,8 +17,8 @@ export const useExpenses = () => {
   const expensesQuery = useQuery({
     queryKey: ["expenses"],
     queryFn: async () => {
-      const response = await api.get<ApiResponse<Expense[]>>("/expenses");
-      return response.data.data;
+      const response = await api.get<ApiResponse<{ data: Expense[]; pagination: any }>>("/expenses");
+      return response.data.data.data; // Extraer array del objeto con paginación
     },
     enabled: Boolean(activeCouple)
   });
