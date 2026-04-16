@@ -22,14 +22,24 @@ const allowedOrigins = new Set([
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.has(origin)) {
+      // Requerir Origin header por seguridad (prevenir CSRF)
+      if (!origin) {
+        console.warn("[CORS] Solicitud sin header Origin rechazada");
+        callback(new Error("Origin header requerido"));
+        return;
+      }
+
+      if (allowedOrigins.has(origin)) {
         callback(null, true);
         return;
       }
 
+      console.warn(`[CORS] Origen rechazado: ${origin}`);
       callback(new Error(`Origen no permitido por CORS: ${origin}`));
     },
-    credentials: true
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
   })
 );
 app.use(express.json());

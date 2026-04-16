@@ -24,8 +24,14 @@ export const errorMiddleware = (
   }
 
   if (error instanceof ZodError) {
+    // En producción, no exponer detalles internos de validación
+    if (process.env.NODE_ENV === "production") {
+      return sendError(res, "Datos inválidos", 422, null);
+    }
+    // En desarrollo, mostrar detalles para debugging
     return sendError(res, "Datos inválidos", 422, error.flatten());
   }
 
+  console.error("[ERROR] Error no manejado:", error);
   return sendError(res, "Error interno del servidor", 500, null);
 };

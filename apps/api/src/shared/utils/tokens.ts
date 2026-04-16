@@ -104,8 +104,19 @@ export const verifyToken = (token: string, secret: string, expectedType: TokenTy
 
   const now = Math.floor(Date.now() / 1000);
 
-  if (payload.type !== expectedType || payload.exp <= now) {
-    throw new AppError("Token inválido o expirado", 401);
+  // Validar tipo de token
+  if (payload.type !== expectedType) {
+    throw new AppError("Tipo de token inválido", 401);
+  }
+
+  // Validar que el token no fue emitido en el futuro
+  if (payload.iat > now) {
+    throw new AppError("Token emitido en el futuro (reloj desincronizado)", 401);
+  }
+
+  // Validar que el token no está expirado
+  if (payload.exp <= now) {
+    throw new AppError("Token expirado", 401);
   }
 
   return payload;

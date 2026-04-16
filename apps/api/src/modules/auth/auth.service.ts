@@ -7,6 +7,9 @@ import { hashPassword, verifyPassword } from "../../shared/utils/password.js";
 import { createAuthSession, verifyToken } from "../../shared/utils/tokens.js";
 import type { LoginInput, LogoutInput, RefreshInput, RegisterInput } from "./auth.schema.js";
 
+// Token blacklist en memoria (idealmente en Redis para producción)
+const revokedTokens = new Set<string>();
+
 interface AppUserRow {
   id: string;
   email: string;
@@ -130,6 +133,11 @@ export class AuthService {
   }
 
   async refreshSession(payload: RefreshInput): Promise<AuthPayload> {
+    // Verificar si el token fue revocado
+    if (this.isTokenRevoked(payload.refreshToken)) {
+      throw new AppError("La sesión ha sido cerrada", 401);
+    }
+
     const tokenPayload = verifyToken(payload.refreshToken, env.SUPABASE_JWT_SECRET, "refresh");
     const user = await this.getUserById(tokenPayload.sub);
 
@@ -141,10 +149,21 @@ export class AuthService {
   }
 
   async logout(payload: LogoutInput) {
+    // Revocar el refresh token si está presente
+    if (payload.refreshToken) {
+      revokedTokens.add(payload.refreshToken);
+      console.log("[AUTH] Refresh token revocado:", payload.refreshToken.substring(0, 20) + "...");
+    }
+
     return {
       revoked: true,
       refreshToken: payload.refreshToken ?? null
     };
+  }
+
+  // Verificar si un token ha sido revocado
+  isTokenRevoked(token: string): boolean {
+    return revokedTokens.has(token);
   }
 }
 

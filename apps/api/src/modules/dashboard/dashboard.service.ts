@@ -4,16 +4,20 @@ import { savingsService } from "../savings/savings.service.js";
 
 export class DashboardService {
   async getMonthlySummary(userId: string, month?: string) {
-    const [contributions, expenses, savingsGoals, manualSavings] = await Promise.all([
+    const [contributionsResult, expensesResult, savingsGoals, manualSavings] = await Promise.all([
       contributionsService.listContributions(userId, { month }),
       expensesService.listExpenses(userId, { month }),
       savingsService.listGoals(userId),
       savingsService.getManualSavingsForMonth(userId, month)
     ]);
 
-    const totalIncome = contributions.reduce((sum, item) => sum + item.amount, 0);
-    const totalExpenses = expenses.reduce((sum, item) => sum + item.amount, 0);
-    const reservedSavings = contributions.reduce((sum, item) => sum + item.savingsReserved, 0) + manualSavings;
+    // Extraer arrays de paginación
+    const contributions = contributionsResult.data;
+    const expenses = expensesResult.data;
+
+    const totalIncome = contributions.reduce((sum: number, item: any) => sum + item.amount, 0);
+    const totalExpenses = expenses.reduce((sum: number, item: any) => sum + item.amount, 0);
+    const reservedSavings = contributions.reduce((sum: number, item: any) => sum + item.savingsReserved, 0) + manualSavings;
 
     return {
       month: month ?? new Date().toISOString().slice(0, 7),
